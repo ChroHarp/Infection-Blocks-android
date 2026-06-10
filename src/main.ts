@@ -8,17 +8,21 @@ import {
   loadEditorIndex,
   loadEditorLevels,
   loadLocale,
+  loadProgress,
+  getStorageDiagnostics,
+  type ProgressMap,
   saveEditorIndex,
   saveEditorLevels,
-  saveLocale
+  saveLocale,
+  saveProgress
 } from "./storage";
 
-type ViewMode = "play" | "editor";
+type Screen = "levels" | "play" | "editor";
 type EditorTool = CellKind;
 
 interface AppState {
   locale: Locale;
-  viewMode: ViewMode;
+  screen: Screen;
   levels: Level[];
   levelIndex: number;
   level: Level;
@@ -30,44 +34,48 @@ interface AppState {
   waveCells: Set<string>;
   isSpreading: boolean;
   lastStars: 0 | 1 | 2 | 3;
+  progress: ProgressMap;
 }
 
-const app = document.querySelector<HTMLDivElement>("#app");
+const appRoot = document.querySelector<HTMLDivElement>("#app");
 
-if (!app) {
+if (!appRoot) {
   throw new Error("Missing #app root");
 }
 
-const root = app;
+const root = appRoot;
+
 const initialLevels = loadEditorLevels(sampleLevels);
 const initialIndex = loadEditorIndex(initialLevels.length);
 const initialLevel = initialLevels[initialIndex];
 
 const state: AppState = {
   locale: loadLocale(),
-  viewMode: "editor",
+  screen: "levels",
   levels: initialLevels,
   levelIndex: initialIndex,
   level: initialLevel,
   tool: "playable",
   seeds: [...initialLevel.requiredSeeds],
-  messageKey: "editorHelp",
+  messageKey: "readyToInfect",
   jsonText: JSON.stringify(initialLevel, null, 2),
   resultInfected: new Set(),
   waveCells: new Set(),
   isSpreading: false,
-  lastStars: 0
+  lastStars: 0,
+  progress: loadProgress()
 };
 
 function render(): void {
   root.innerHTML = `
-    <main class="shell">
-      <header class="topbar">
+    <main class="app-shell">
+      <header class="app-header">
         <div>
-          <p class="eyebrow">MOBILE PUZZLE PROTOTYPE</p>
+          <p class="eyebrow">INFECTION BLOCKS</p>
           <h1>${t(state.locale, "appTitle")}</h1>
+          <p class="subtitle">${t(state.locale, "appSubtitle")}</p>
         </div>
-        <label class="select-label">
+        <label class="language-control">
           <span>${t(state.locale, "language")}</span>
           <select data-action="locale">
             <option value="zh-Hant" ${state.locale === "zh-Hant" ? "selected" : ""}>繁中</option>
@@ -77,22 +85,125 @@ function render(): void {
         </label>
       </header>
 
-      <nav class="segmented" aria-label="Mode">
-        ${segmentButton("editor", "modeEditor")}
-        ${segmentButton("play", "modePlay")}
+      <nav class="app-tabs" aria-label="Main">
+        ${tabButton("levels", "screenLevels")}
+        ${tabButton("play", "screenPlay")}
+        ${tabButton("editor", "screenEditor")}
       </nav>
 
-      ${state.viewMode === "editor" ? renderEditor() : renderPlayer()}
+      ${state.screen === "levels" ? renderLevelSelect() : ""}
+      ${state.screen === "play" ? renderPlayScreen() : ""}
+      ${state.screen === "editor" ? renderEditor() : ""}
     </main>
   `;
 
   bindEvents();
 }
 
+function renderLevelSelect(): string {
+  const completed = state.levels.filter((level) => state.progress[level.id]?.completed).length;
+  const totalStars = state.levels.reduce((sum, level) => sum + (state.progress[level.id]?.bestStars ?? 0), 0);
+
+  return `
+    <section class="level-screen">
+      <div class="summary-band">
+        <div>
+          <span>${t(state.locale, "levelSelect")}</span>
+          <strong>${completed} / ${state.levels.length}</strong>
+        </div>
+        <div>
+          <span>${t(state.locale, "starsEarned")}</span>
+          <strong>${starText(totalStars, state.levels.length * 3)}</strong>
+        </div>
+      </div>
+
+      <div class="level-list">
+        ${state.levels.map((level, index) => renderLevelCard(level, index)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderLevelCard(level: Level, index: number): string {
+  const progress = state.progress[level.id];
+  const unlocked = isLevelUnlocked(index);
+  const selected = index === state.levelIndex;
+  const label = progress?.completed ? `${t(state.locale, "best")} ${"★".repeat(progress.bestStars)}` : t(state.locale, "notCleared");
+
+  return `
+    <button class="level-card ${selected ? "selected" : ""} ${unlocked ? "" : "locked"}" data-level-index="${index}" ${unlocked ? "" : "disabled"}>
+      <div class="level-card-main">
+        <span class="level-number">${String(index + 1).padStart(2, "0")}</span>
+        <div>
+          <strong>${level.id}</strong>
+          <span>${level.rows}x${level.cols} · ${t(state.locale, "seedLimit")} ${maxPassingSeeds(level)}</span>
+        </div>
+      </div>
+      <div class="level-card-meta">
+        <span class="pill ${level.free ? "free" : "paid"}">${t(state.locale, level.free ? "freeLevel" : "paidLevel")}</span>
+        <span>${unlocked ? label : t(state.locale, "locked")}</span>
+      </div>
+      ${renderMiniBoard(level)}
+    </button>
+  `;
+}
+
+function renderMiniBoard(level: Level): string {
+  const cells: string[] = [];
+
+  for (let row = 0; row < level.rows; row += 1) {
+    for (let col = 0; col < level.cols; col += 1) {
+      cells.push(`<span class="mini-cell ${getCellKind(level, row, col)}"></span>`);
+    }
+  }
+
+  return `<div class="mini-board" style="--rows:${level.rows};--cols:${level.cols}">${cells.join("")}</div>`;
+}
+
+function renderPlayScreen(): string {
+  const progress = state.progress[state.level.id];
+
+  return `
+    <section class="play-screen">
+      <header class="play-status">
+        <button class="ghost-button" data-action="back-levels">${t(state.locale, "backToLevels")}</button>
+        <div>
+          <span>${t(state.locale, "level")} ${state.levelIndex + 1}</span>
+          <strong>${state.level.id}</strong>
+        </div>
+        <div class="status-stars">${progress?.completed ? "★".repeat(progress.bestStars) : "☆☆☆"}</div>
+      </header>
+
+      <section class="board-stage">
+        ${renderGrid("play")}
+      </section>
+
+      <section class="play-panel">
+        <div class="play-metrics">
+          <div>
+            <span>${t(state.locale, "seeds")}</span>
+            <strong>${state.seeds.length} / ${maxPassingSeeds(state.level)}</strong>
+          </div>
+          <div>
+            <span>${t(state.locale, "starsEarned")}</span>
+            <strong>${"★".repeat(state.lastStars)}${"☆".repeat(3 - state.lastStars)}</strong>
+          </div>
+        </div>
+        <p class="message">${t(state.locale, state.isSpreading ? "spreading" : state.messageKey)}</p>
+        <div class="bottom-actions">
+          <button data-action="undo" ${state.isSpreading ? "disabled" : ""}>${t(state.locale, "undo")}</button>
+          <button class="primary-action" data-action="start-infection" ${state.isSpreading || state.seeds.length === 0 ? "disabled" : ""}>${t(state.locale, "start")}</button>
+          <button data-action="reset-seeds" ${state.isSpreading ? "disabled" : ""}>${t(state.locale, "reset")}</button>
+        </div>
+      </section>
+    </section>
+  `;
+}
+
 function renderEditor(): string {
   return `
-    <section class="layout">
-      <aside class="panel controls">
+    <section class="editor-layout">
+      <aside class="editor-panel">
         <div class="level-nav">
           <button data-action="prev-level" type="button" ${state.levelIndex === 0 ? "disabled" : ""}>${t(state.locale, "prevLevel")}</button>
           <div class="level-position">${state.levelIndex + 1} / ${state.levels.length}</div>
@@ -101,6 +212,7 @@ function renderEditor(): string {
         <button data-action="new-level" type="button">${t(state.locale, "newLevel")}</button>
         <h2>${t(state.locale, "editorTitle")}</h2>
         <p class="hint">${t(state.locale, "editorHelp")}</p>
+        ${renderStorageDiagnostics()}
 
         <div class="field-grid">
           ${numberInput("rows", "rows", state.level.rows, 1, 16)}
@@ -129,7 +241,7 @@ function renderEditor(): string {
         </div>
       </aside>
 
-      <section class="workspace">
+      <section class="editor-workspace">
         ${renderGrid("editor")}
         <p class="message">${t(state.locale, state.messageKey)}</p>
         <textarea class="json-box" data-field="jsonText" spellcheck="false">${escapeHtml(state.jsonText)}</textarea>
@@ -139,48 +251,21 @@ function renderEditor(): string {
   `;
 }
 
-function renderPlayer(): string {
-  const stars = "★".repeat(state.lastStars) + "☆".repeat(3 - state.lastStars);
-
-  return `
-    <section class="layout">
-      <aside class="panel controls">
-        <h2>${state.level.id}</h2>
-        <div class="stats">
-          <span>${t(state.locale, "seeds")}</span>
-          <strong>${state.seeds.length} / ${maxPassingSeeds(state.level)}</strong>
-        </div>
-        <div class="stars" aria-label="stars">${stars}</div>
-        <div class="toolbar">
-          <button data-action="start-infection" ${state.isSpreading || state.seeds.length === 0 ? "disabled" : ""}>${t(state.locale, "start")}</button>
-          <button data-action="undo" ${state.isSpreading ? "disabled" : ""}>${t(state.locale, "undo")}</button>
-          <button data-action="reset-seeds" ${state.isSpreading ? "disabled" : ""}>${t(state.locale, "reset")}</button>
-        </div>
-        <p class="hint">${t(state.locale, state.isSpreading ? "spreading" : state.messageKey)}</p>
-      </aside>
-
-      <section class="workspace">
-        ${renderGrid("play")}
-        <p class="message">${t(state.locale, state.messageKey)}</p>
-      </section>
-    </section>
-  `;
-}
-
 function renderGrid(mode: "editor" | "play"): string {
   const smallBoard = state.level.rows <= 5 && state.level.cols <= 5;
-  const gridWidth = smallBoard ? "fit-content" : `min(100%, calc(72vh * ${state.level.cols} / ${state.level.rows}))`;
+  const gridWidth = smallBoard ? "fit-content" : `min(100%, calc(68vh * ${state.level.cols} / ${state.level.rows}))`;
   const cellSize = smallBoard ? "46px" : "minmax(0, 1fr)";
-  const style = `--rows:${state.level.rows};--cols:${state.level.cols};--grid-width:${gridWidth};--cell-size:${cellSize}`;
   const cells: string[] = [];
 
   for (let row = 0; row < state.level.rows; row += 1) {
     for (let col = 0; col < state.level.cols; col += 1) {
+      const key = `${row}:${col}`;
       const kind = getCellKind(state.level, row, col);
-      const selected = state.seeds.some(([seedRow, seedCol]) => seedRow === row && seedCol === col);
-      const infected = state.resultInfected.has(`${row}:${col}`);
-      const spreading = state.waveCells.has(`${row}:${col}`);
+      const selected = state.seeds.some((coord) => coordKey(coord) === key);
+      const infected = state.resultInfected.has(key);
+      const spreading = state.waveCells.has(key);
       const playKind = mode === "play" ? `play-${kind}` : "";
+
       cells.push(`
         <button
           class="cell ${kind} ${playKind} ${selected ? "selected" : ""} ${infected ? "infected" : ""} ${spreading ? "spreading" : ""}"
@@ -192,26 +277,36 @@ function renderGrid(mode: "editor" | "play"): string {
     }
   }
 
-  return `<div class="grid" style="${style}">${cells.join("")}</div>`;
+  return `<div class="grid" style="--rows:${state.level.rows};--cols:${state.level.cols};--grid-width:${gridWidth};--cell-size:${cellSize}">${cells.join("")}</div>`;
 }
 
 function bindEvents(): void {
-  root.querySelectorAll<HTMLElement>("[data-mode]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.viewMode = button.dataset.mode as ViewMode;
-      state.messageKey = state.viewMode === "editor" ? "editorHelp" : "readyToInfect";
-      if (state.viewMode === "play") {
-        syncRequiredSeeds();
-      }
-      render();
-    });
-  });
-
   root.querySelector<HTMLSelectElement>("[data-action='locale']")?.addEventListener("change", (event) => {
     const locale = (event.target as HTMLSelectElement).value as Locale;
     state.locale = locale;
     saveLocale(locale);
     render();
+  });
+
+  root.querySelectorAll<HTMLElement>("[data-screen]").forEach((button) => {
+    button.addEventListener("click", () => setScreen(button.dataset.screen as Screen));
+  });
+
+  root.querySelectorAll<HTMLElement>("[data-level-index]").forEach((button) => {
+    button.addEventListener("click", () => openLevel(Number(button.dataset.levelIndex)));
+  });
+
+  root.querySelector<HTMLElement>("[data-action='back-levels']")?.addEventListener("click", () => setScreen("levels"));
+  root.querySelector<HTMLElement>("[data-action='start-infection']")?.addEventListener("click", startInfection);
+  root.querySelector<HTMLElement>("[data-action='undo']")?.addEventListener("click", undoSeed);
+  root.querySelector<HTMLElement>("[data-action='reset-seeds']")?.addEventListener("click", resetPlayState);
+
+  root.querySelectorAll<HTMLElement>("[data-cell]").forEach((cell) => {
+    cell.addEventListener("click", () => {
+      const [row, col] = cell.dataset.cell?.split(",").map(Number) ?? [0, 0];
+      state.screen === "editor" ? editCell(row, col) : toggleSeed(row, col);
+      render();
+    });
   });
 
   root.querySelectorAll<HTMLInputElement | HTMLSelectElement>("[data-field]").forEach((input) => {
@@ -229,39 +324,74 @@ function bindEvents(): void {
     });
   });
 
-  root.querySelectorAll<HTMLElement>("[data-cell]").forEach((cell) => {
-    cell.addEventListener("click", () => {
-      const [row, col] = cell.dataset.cell?.split(",").map(Number) ?? [0, 0];
-      state.viewMode === "editor" ? editCell(row, col) : toggleSeed(row, col);
-      render();
-    });
-  });
-
   root.querySelector<HTMLElement>("[data-action='export-json']")?.addEventListener("click", exportJson);
   root.querySelector<HTMLElement>("[data-action='copy-json']")?.addEventListener("click", copyJson);
   root.querySelector<HTMLElement>("[data-action='import-json']")?.addEventListener("click", importJson);
-  root.querySelector<HTMLElement>("[data-action='prev-level']")?.addEventListener("click", () => switchLevel(state.levelIndex - 1));
-  root.querySelector<HTMLElement>("[data-action='next-level']")?.addEventListener("click", () => switchLevel(state.levelIndex + 1));
+  root.querySelector<HTMLElement>("[data-action='prev-level']")?.addEventListener("click", () => {
+    switchLevel(state.levelIndex - 1);
+    render();
+  });
+  root.querySelector<HTMLElement>("[data-action='next-level']")?.addEventListener("click", () => {
+    switchLevel(state.levelIndex + 1);
+    render();
+  });
   root.querySelector<HTMLElement>("[data-action='new-level']")?.addEventListener("click", createLevel);
-  root.querySelector<HTMLElement>("[data-action='start-infection']")?.addEventListener("click", startInfection);
-  root.querySelector<HTMLElement>("[data-action='undo']")?.addEventListener("click", () => {
-    if (state.isSpreading) return;
-    state.seeds.pop();
-    state.resultInfected = new Set();
-    state.waveCells = new Set();
-    state.lastStars = 0;
+  root.querySelector<HTMLElement>("[data-action='rescan-storage']")?.addEventListener("click", rescanStorage);
+}
+
+function renderStorageDiagnostics(): string {
+  const diagnostics = getStorageDiagnostics(state.levels);
+
+  return `
+    <section class="storage-diagnostics">
+      <div>
+        <span>本機關卡</span>
+        <strong>${diagnostics.levelIds.length}</strong>
+      </div>
+      <div>
+        <span>custom-</span>
+        <strong>${diagnostics.customLevelIds.length}</strong>
+      </div>
+      <button data-action="rescan-storage" type="button">重新掃描本機資料</button>
+      <p class="hint">Keys: ${diagnostics.keys.length > 0 ? diagnostics.keys.join(", ") : "無"}</p>
+      <p class="hint">Custom: ${diagnostics.customLevelIds.length > 0 ? diagnostics.customLevelIds.join(", ") : "未偵測到"}</p>
+    </section>
+  `;
+}
+
+function setScreen(screen: Screen): void {
+  state.screen = screen;
+  if (screen === "play") {
+    syncRequiredSeeds();
     state.messageKey = "readyToInfect";
-    render();
-  });
-  root.querySelector<HTMLElement>("[data-action='reset-seeds']")?.addEventListener("click", () => {
-    if (state.isSpreading) return;
-    state.seeds = [...state.level.requiredSeeds];
-    state.resultInfected = new Set();
-    state.waveCells = new Set();
-    state.lastStars = 0;
-    state.messageKey = "readyToInfect";
-    render();
-  });
+  }
+  if (screen === "editor") {
+    exportJson();
+    state.messageKey = "editorHelp";
+  }
+  render();
+}
+
+function openLevel(index: number): void {
+  if (!isLevelUnlocked(index)) return;
+  switchLevel(index);
+  setScreen("play");
+}
+
+function rescanStorage(): void {
+  state.levels = loadEditorLevels(sampleLevels);
+  state.levelIndex = clamp(state.levelIndex, 0, state.levels.length - 1);
+  state.level = state.levels[state.levelIndex];
+  resetToRequiredSeeds();
+  clearRunState();
+  exportJson();
+  render();
+}
+
+function isLevelUnlocked(index: number): boolean {
+  if (index === 0) return true;
+  if (state.levels[index]?.free) return true;
+  return Boolean(state.progress[state.levels[index - 1]?.id]?.completed);
 }
 
 function editCell(row: number, col: number): void {
@@ -285,11 +415,9 @@ function toggleSeed(row: number, col: number): void {
   const key = `${row}:${col}`;
   const selected = state.seeds.some((coord) => coordKey(coord) === key);
 
-  if (selected) {
-    state.seeds = state.seeds.filter((coord) => coordKey(coord) !== key);
-  } else {
-    state.seeds = uniqueCoords([...state.seeds, [row, col]]);
-  }
+  state.seeds = selected
+    ? state.seeds.filter((coord) => coordKey(coord) !== key)
+    : uniqueCoords([...state.seeds, [row, col]]);
 
   state.resultInfected = new Set();
   state.waveCells = new Set();
@@ -330,7 +458,54 @@ async function startInfection(): Promise<void> {
   state.resultInfected = result.infected;
   state.lastStars = result.stars;
   state.messageKey = result.completed ? "completed" : result.failureReason ?? "failed";
+
+  if (result.completed) {
+    recordProgress(result.stars, result.seedsUsed);
+  }
+
   render();
+}
+
+function recordProgress(stars: 0 | 1 | 2 | 3, seedsUsed: number): void {
+  const current = state.progress[state.level.id];
+  const betterStars = stars > (current?.bestStars ?? 0);
+  const betterSeeds = stars === (current?.bestStars ?? 0) && (current?.bestSeeds === null || seedsUsed < (current?.bestSeeds ?? Infinity));
+
+  if (!current || betterStars || betterSeeds) {
+    state.progress[state.level.id] = {
+      completed: true,
+      bestStars: stars,
+      bestSeeds: seedsUsed
+    };
+    saveProgress(state.progress);
+  }
+}
+
+function undoSeed(): void {
+  if (state.isSpreading) return;
+  const required = new Set(state.level.requiredSeeds.map(coordKey));
+  const reversed = [...state.seeds].reverse();
+  const removable = reversed.find((coord) => !required.has(coordKey(coord)));
+  if (!removable) return;
+
+  const removableKey = coordKey(removable);
+  state.seeds = state.seeds.filter((coord) => coordKey(coord) !== removableKey);
+  clearRunState();
+  render();
+}
+
+function resetPlayState(): void {
+  if (state.isSpreading) return;
+  resetToRequiredSeeds();
+  clearRunState();
+  state.messageKey = "readyToInfect";
+  render();
+}
+
+function clearRunState(): void {
+  state.resultInfected = new Set();
+  state.waveCells = new Set();
+  state.lastStars = 0;
 }
 
 function updateField(input: HTMLInputElement | HTMLSelectElement): void {
@@ -340,7 +515,6 @@ function updateField(input: HTMLInputElement | HTMLSelectElement): void {
   if (field === "id") state.level.id = input.value.trim() || "custom-level";
   if (field === "rows") state.level.rows = clamp(Number(input.value), 1, 16);
   if (field === "cols") state.level.cols = clamp(Number(input.value), 1, 16);
-  if (field === "maxSeeds") state.level.maxSeeds = clamp(Number(input.value), 1, 99);
   if (field === "free" && input instanceof HTMLInputElement) state.level.free = input.checked;
   if (field === "star3") {
     state.level.stars.three = clamp(Number(input.value), 1, 99);
@@ -415,14 +589,11 @@ function switchLevel(index: number): void {
   state.levelIndex = nextIndex;
   state.level = state.levels[nextIndex];
   resetToRequiredSeeds();
-  state.resultInfected = new Set();
-  state.waveCells = new Set();
+  clearRunState();
   state.isSpreading = false;
-  state.lastStars = 0;
   state.messageKey = "readyToInfect";
   exportJson();
   saveEditorIndex(nextIndex);
-  render();
 }
 
 function createLevel(): void {
@@ -446,11 +617,9 @@ function createLevel(): void {
   state.levels.push(level);
   state.levelIndex = state.levels.length - 1;
   state.level = level;
-  state.seeds = [];
-  state.resultInfected = new Set();
-  state.waveCells = new Set();
+  resetToRequiredSeeds();
+  clearRunState();
   state.isSpreading = false;
-  state.lastStars = 0;
   state.messageKey = "editorHelp";
   saveCurrentLevel();
   exportJson();
@@ -459,7 +628,10 @@ function createLevel(): void {
 
 function syncRequiredSeeds(): void {
   state.seeds = uniqueCoords([...state.level.requiredSeeds, ...state.seeds])
-    .filter(([row, col]) => getCellKind(state.level, row, col) !== "blockedSeed" && getCellKind(state.level, row, col) !== "hole");
+    .filter(([row, col]) => {
+      const kind = getCellKind(state.level, row, col);
+      return kind !== "blockedSeed" && kind !== "hole";
+    });
 }
 
 function resetToRequiredSeeds(): void {
@@ -481,8 +653,8 @@ function getCellKind(level: Level, row: number, col: number): CellKind {
   return "playable";
 }
 
-function segmentButton(mode: ViewMode, labelKey: string): string {
-  return `<button class="${state.viewMode === mode ? "active" : ""}" data-mode="${mode}" type="button">${t(state.locale, labelKey)}</button>`;
+function tabButton(screen: Screen, labelKey: string): string {
+  return `<button class="${state.screen === screen ? "active" : ""}" data-screen="${screen}" type="button">${t(state.locale, labelKey)}</button>`;
 }
 
 function toolButton(tool: EditorTool, labelKey: string): string {
@@ -514,6 +686,10 @@ function textInput(field: string, labelKey: string, value: string): string {
       <input data-field="${field}" type="text" value="${escapeHtml(value)}" />
     </label>
   `;
+}
+
+function starText(stars: number, maxStars = 3): string {
+  return `${stars} / ${maxStars}`;
 }
 
 function clamp(value: number, min: number, max: number): number {
