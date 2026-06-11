@@ -127,7 +127,7 @@ h2 {
   font-size: 0.78rem;
 }
 
-.app-tabs {
+.dev-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;

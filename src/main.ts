@@ -48,6 +48,7 @@ const root = appRoot;
 const initialLevels = loadEditorLevels(sampleLevels);
 const initialIndex = loadEditorIndex(initialLevels.length);
 const initialLevel = initialLevels[initialIndex];
+const editorEnabled = new URLSearchParams(window.location.search).get("editor") === "1";
 
 const state: AppState = {
   locale: loadLocale(),
@@ -85,19 +86,25 @@ function render(): void {
         </label>
       </header>
 
-      <nav class="app-tabs" aria-label="Main">
-        ${tabButton("levels", "screenLevels")}
-        ${tabButton("play", "screenPlay")}
-        ${tabButton("editor", "screenEditor")}
-      </nav>
+      ${editorEnabled ? renderDevNav() : ""}
 
       ${state.screen === "levels" ? renderLevelSelect() : ""}
       ${state.screen === "play" ? renderPlayScreen() : ""}
-      ${state.screen === "editor" ? renderEditor() : ""}
+      ${editorEnabled && state.screen === "editor" ? renderEditor() : ""}
     </main>
   `;
 
   bindEvents();
+}
+
+function renderDevNav(): string {
+  return `
+    <nav class="dev-tabs" aria-label="Developer">
+      ${tabButton("levels", "screenLevels")}
+      ${tabButton("play", "screenPlay")}
+      ${tabButton("editor", "screenEditor")}
+    </nav>
+  `;
 }
 
 function renderLevelSelect(): string {
@@ -360,6 +367,8 @@ function renderStorageDiagnostics(): string {
 }
 
 function setScreen(screen: Screen): void {
+  if (screen === "editor" && !editorEnabled) return;
+
   state.screen = screen;
   if (screen === "play") {
     syncRequiredSeeds();
