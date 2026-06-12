@@ -1,7 +1,9 @@
 node_modules/
 dist/
+dist-player/
 android/
 ios/
+.netlify/
 .env
 .env.*
 !.env.example

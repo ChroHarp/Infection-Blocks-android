@@ -48,7 +48,8 @@ const initialLevels = loadEditorLevels(sampleLevels);
 const initialIndex = loadEditorIndex(initialLevels.length);
 const initialLevel = initialLevels[initialIndex];
 const searchParams = new URLSearchParams(window.location.search);
-const editorEnabled = searchParams.get("editor") === "1" || window.location.pathname.endsWith("/editor.html");
+const editorBuildEnabled = import.meta.env.VITE_ENABLE_EDITOR !== "false";
+const editorEnabled = editorBuildEnabled && (searchParams.get("editor") === "1" || window.location.pathname.endsWith("/editor.html"));
 
 const state: AppState = {
   locale: loadLocale(),
