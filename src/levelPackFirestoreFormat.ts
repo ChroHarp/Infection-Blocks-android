@@ -27,6 +27,22 @@ export function toFirestoreLevelPack(pack: LevelPack): FirestoreLevelPack {
   };
 }
 
+export function fromFirestoreLevelPack(pack: FirestoreLevelPack): LevelPack {
+  return {
+    ...pack,
+    levels: pack.levels.map((level) => ({
+      ...level,
+      holes: level.holes.map(fromFirestoreCoord),
+      requiredSeeds: level.requiredSeeds.map(fromFirestoreCoord),
+      blockedSeeds: level.blockedSeeds.map(fromFirestoreCoord)
+    }))
+  };
+}
+
 function toFirestoreCoord([row, col]: CellCoord): FirestoreCoord {
   return { row, col };
+}
+
+function fromFirestoreCoord({ row, col }: FirestoreCoord): CellCoord {
+  return [row, col];
 }

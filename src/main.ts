@@ -16,7 +16,7 @@ import {
   saveProgress
 } from "./storage";
 
-type Screen = "levels" | "play" | "editor";
+type Screen = "packages" | "levels" | "play" | "editor";
 type EditorTool = CellKind;
 
 interface AppState {
@@ -25,6 +25,7 @@ interface AppState {
   levels: Level[];
   levelIndex: number;
   level: Level;
+  selectedPackId: string;
   tool: EditorTool;
   seeds: CellCoord[];
   messageKey: string;
@@ -32,6 +33,7 @@ interface AppState {
   resultInfected: Set<string>;
   waveCells: Set<string>;
   isSpreading: boolean;
+  victoryOpen: boolean;
   lastStars: 0 | 1 | 2 | 3;
   progress: ProgressMap;
 }
@@ -53,10 +55,11 @@ const editorEnabled = editorBuildEnabled && (searchParams.get("editor") === "1" 
 
 const state: AppState = {
   locale: loadLocale(),
-  screen: editorEnabled ? "editor" : "levels",
+  screen: editorEnabled ? "editor" : "packages",
   levels: initialLevels,
   levelIndex: initialIndex,
   level: initialLevel,
+  selectedPackId: initialLevel.packId,
   tool: "playable",
   seeds: [...initialLevel.requiredSeeds],
   messageKey: "readyToInfect",
@@ -64,6 +67,7 @@ const state: AppState = {
   resultInfected: new Set(),
   waveCells: new Set(),
   isSpreading: false,
+  victoryOpen: false,
   lastStars: 0,
   progress: loadProgress()
 };
@@ -89,6 +93,7 @@ function render(): void {
 
       ${editorEnabled ? renderDevNav() : ""}
 
+      ${state.screen === "packages" ? renderPackageSelect() : ""}
       ${state.screen === "levels" ? renderLevelSelect() : ""}
       ${state.screen === "play" ? renderPlayScreen() : ""}
       ${editorEnabled && state.screen === "editor" ? renderEditor() : ""}
@@ -101,6 +106,7 @@ function render(): void {
 function renderDevNav(): string {
   return `
     <nav class="dev-tabs" aria-label="Developer">
+      ${tabButton("packages", "screenPackages")}
       ${tabButton("levels", "screenLevels")}
       ${tabButton("play", "screenPlay")}
       ${tabButton("editor", "screenEditor")}
@@ -108,7 +114,7 @@ function renderDevNav(): string {
   `;
 }
 
-function renderLevelSelect(): string {
+function renderPackageSelect(): string {
   const completed = state.levels.filter((level) => state.progress[level.id]?.completed).length;
   const totalStars = state.levels.reduce((sum, level) => sum + (state.progress[level.id]?.bestStars ?? 0), 0);
   const packs = groupedLevels();
@@ -126,9 +132,57 @@ function renderLevelSelect(): string {
         </div>
       </div>
 
-      <div class="package-list">
-        ${packs.map((pack) => renderPackageSection(pack)).join("")}
+      <div class="package-grid">
+        ${packs.map((pack) => renderPackageCard(pack)).join("")}
       </div>
+    </section>
+  `;
+}
+
+function renderPackageCard(pack: LevelPack): string {
+  const completed = pack.levels.filter((level) => state.progress[level.id]?.completed).length;
+  const totalStars = pack.levels.reduce((sum, level) => sum + (state.progress[level.id]?.bestStars ?? 0), 0);
+  const paid = pack.levels.some((level) => !level.free);
+  const unlocked = isPackageUnlocked(pack);
+  const nextIndex = recommendedLevelIndex(pack);
+  const nextLevel = nextIndex >= 0 ? state.levels[nextIndex] : pack.levels[0];
+
+  return `
+    <button class="package-card ${unlocked ? "" : "locked"}" data-pack-id="${pack.id}" ${unlocked ? "" : "disabled"}>
+      <div class="package-card-main">
+        <span>${t(state.locale, "package")}</span>
+        <strong>${pack.id}</strong>
+      </div>
+      <div class="package-card-stats">
+        <span class="pill ${paid ? "paid" : "free"}">${t(state.locale, paid ? "paidLevel" : "freeLevel")}</span>
+        <span>${completed} / ${pack.levels.length}</span>
+        <span>${starText(totalStars, pack.levels.length * 3)}</span>
+      </div>
+      <div class="package-card-continue">
+        <span>${t(state.locale, completed > 0 ? "continueLevel" : "playLevel")}</span>
+        <strong>${nextLevel?.id ?? pack.id}</strong>
+      </div>
+    </button>
+  `;
+}
+
+function renderLevelSelect(): string {
+  const packs = groupedLevels();
+  const pack = packs.find((candidate) => candidate.id === state.selectedPackId) ?? packs[0];
+
+  if (!pack) return "";
+
+  return `
+    <section class="level-screen">
+      <header class="level-pack-header">
+        <button class="ghost-button" data-action="back-packages">${t(state.locale, "backToPackages")}</button>
+        <div>
+          <span>${t(state.locale, "package")}</span>
+          <strong>${pack.id}</strong>
+        </div>
+        <button class="primary-action" data-action="continue-package">${t(state.locale, "continueLevel")}</button>
+      </header>
+      ${renderPackageSection(pack)}
     </section>
   `;
 }
@@ -254,7 +308,29 @@ function renderPlayScreen(): string {
           <button data-action="reset-seeds" ${state.isSpreading ? "disabled" : ""}>${t(state.locale, "reset")}</button>
         </div>
       </section>
+
+      ${state.victoryOpen ? renderVictoryDialog() : ""}
     </section>
+  `;
+}
+
+function renderVictoryDialog(): string {
+  const nextIndex = nextLevelIndex();
+  const hasNext = nextIndex !== null;
+
+  return `
+    <div class="modal-backdrop" role="dialog" aria-modal="true">
+      <section class="result-dialog">
+        <span>${t(state.locale, "completed")}</span>
+        <h2>${t(state.locale, "victoryTitle")}</h2>
+        <div class="result-stars">${"★".repeat(state.lastStars)}${"☆".repeat(3 - state.lastStars)}</div>
+        <p>${t(state.locale, "victoryMessage")}</p>
+        <div class="result-actions">
+          <button class="primary-action" data-action="next-after-win" ${hasNext ? "" : "disabled"}>${t(state.locale, "nextLevel")}</button>
+          <button data-action="exit-after-win">${t(state.locale, "backToLevels")}</button>
+        </div>
+      </section>
+    </div>
   `;
 }
 
@@ -354,11 +430,19 @@ function bindEvents(): void {
     button.addEventListener("click", () => setScreen(button.dataset.screen as Screen));
   });
 
+  root.querySelectorAll<HTMLElement>("[data-pack-id]").forEach((button) => {
+    button.addEventListener("click", () => openPackage(button.dataset.packId ?? state.selectedPackId));
+  });
+
   root.querySelectorAll<HTMLElement>("[data-level-index]").forEach((button) => {
     button.addEventListener("click", () => openLevel(Number(button.dataset.levelIndex)));
   });
 
+  root.querySelector<HTMLElement>("[data-action='back-packages']")?.addEventListener("click", () => setScreen("packages"));
+  root.querySelector<HTMLElement>("[data-action='continue-package']")?.addEventListener("click", continuePackage);
   root.querySelector<HTMLElement>("[data-action='back-levels']")?.addEventListener("click", () => setScreen("levels"));
+  root.querySelector<HTMLElement>("[data-action='next-after-win']")?.addEventListener("click", openNextLevelAfterWin);
+  root.querySelector<HTMLElement>("[data-action='exit-after-win']")?.addEventListener("click", exitAfterWin);
   root.querySelector<HTMLElement>("[data-action='start-infection']")?.addEventListener("click", startInfection);
   root.querySelector<HTMLElement>("[data-action='undo']")?.addEventListener("click", undoSeed);
   root.querySelector<HTMLElement>("[data-action='reset-seeds']")?.addEventListener("click", resetPlayState);
@@ -408,6 +492,9 @@ function setScreen(screen: Screen): void {
   if (screen === "editor" && !editorEnabled) return;
 
   state.screen = screen;
+  if (screen === "packages" || screen === "levels") {
+    state.victoryOpen = false;
+  }
   if (screen === "play") {
     syncRequiredSeeds();
     state.messageKey = "readyToInfect";
@@ -419,16 +506,68 @@ function setScreen(screen: Screen): void {
   render();
 }
 
+function openPackage(packId: string): void {
+  state.selectedPackId = packId;
+  setScreen("levels");
+}
+
+function continuePackage(): void {
+  const pack = groupedLevels().find((candidate) => candidate.id === state.selectedPackId);
+  if (!pack) return;
+
+  const index = recommendedLevelIndex(pack);
+  if (index >= 0) openLevel(index);
+}
+
 function openLevel(index: number): void {
   if (!isLevelUnlocked(index)) return;
   switchLevel(index);
   setScreen("play");
 }
 
+function openNextLevelAfterWin(): void {
+  const index = nextLevelIndex();
+  if (index === null) return;
+  state.victoryOpen = false;
+  openLevel(index);
+}
+
+function exitAfterWin(): void {
+  state.victoryOpen = false;
+  setScreen("levels");
+}
+
 function isLevelUnlocked(index: number): boolean {
   if (index === 0) return true;
   if (state.levels[index]?.free) return true;
   return Boolean(state.progress[state.levels[index - 1]?.id]?.completed);
+}
+
+function isPackageUnlocked(pack: LevelPack): boolean {
+  const firstIndex = state.levels.findIndex((level) => level.id === pack.levels[0]?.id);
+  return firstIndex >= 0 && isLevelUnlocked(firstIndex);
+}
+
+function recommendedLevelIndex(pack: LevelPack): number {
+  const firstPlayable = pack.levels
+    .map((level) => state.levels.findIndex((candidate) => candidate.id === level.id))
+    .find((index) => index >= 0 && isLevelUnlocked(index) && !state.progress[state.levels[index].id]?.completed);
+
+  if (firstPlayable !== undefined) return firstPlayable;
+
+  const firstLevelIndex = state.levels.findIndex((level) => level.id === pack.levels[0]?.id);
+  return firstLevelIndex;
+}
+
+function nextLevelIndex(): number | null {
+  const currentPackLevels = state.levels
+    .map((level, index) => ({ level, index }))
+    .filter((entry) => entry.level.packId === state.selectedPackId)
+    .sort((a, b) => a.level.order - b.level.order);
+  const position = currentPackLevels.findIndex((entry) => entry.index === state.levelIndex);
+  const next = position >= 0 ? currentPackLevels[position + 1] : undefined;
+
+  return next && isLevelUnlocked(next.index) ? next.index : null;
 }
 
 function editCell(row: number, col: number): void {
@@ -498,6 +637,7 @@ async function startInfection(): Promise<void> {
 
   if (result.completed) {
     recordProgress(result.stars, result.seedsUsed);
+    state.victoryOpen = true;
   }
 
   render();
@@ -626,9 +766,11 @@ function switchLevel(index: number): void {
   saveCurrentLevel();
   state.levelIndex = nextIndex;
   state.level = state.levels[nextIndex];
+  state.selectedPackId = state.level.packId;
   resetToRequiredSeeds();
   clearRunState();
   state.isSpreading = false;
+  state.victoryOpen = false;
   state.messageKey = "readyToInfect";
   exportJson();
   saveEditorIndex(nextIndex);
@@ -728,8 +870,8 @@ async function saveCurrentPackToFirestore(status: LevelPackStatus): Promise<void
     const { saveLevelPackToFirestore } = await import("./editorFirestore");
     await saveLevelPackToFirestore(buildCurrentPack(status), status);
     state.messageKey = status === "published" ? "publishSucceeded" : "draftSaved";
-  } catch {
-    state.messageKey = "firestoreSaveFailed";
+  } catch (error) {
+    state.messageKey = error instanceof Error ? error.message : "firestoreSaveFailed";
   }
 
   render();
@@ -741,17 +883,21 @@ function buildCurrentPack(status: LevelPackStatus): LevelPack {
     .filter((level) => level.packId === packId)
     .sort((a, b) => a.order - b.order);
   const hasPaidLevel = levels.some((level) => !level.free);
-
-  return {
+  const pack: LevelPack = {
     id: packId,
     order: uniquePackIds().indexOf(packId) + 1,
     titleKey: `pack.${packId.replaceAll("-", "")}`,
     access: hasPaidLevel ? "paid" : "free",
     status,
     publishedAt: status === "published" ? new Date().toISOString() : null,
-    purchaseId: hasPaidLevel ? "unlock_full_game" : undefined,
     levels
   };
+
+  if (hasPaidLevel) {
+    pack.purchaseId = "unlock_full_game";
+  }
+
+  return pack;
 }
 
 function lastIndexInPack(packId: string): number {

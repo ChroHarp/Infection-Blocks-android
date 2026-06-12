@@ -129,7 +129,7 @@ h2 {
 
 .dev-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -150,6 +150,7 @@ h2 {
 
 .summary-band span,
 .package-header span,
+.level-pack-header span,
 .level-card-meta,
 .level-card-main span,
 .play-status span,
@@ -165,10 +166,18 @@ h2 {
   font-size: 1.25rem;
 }
 
+.package-grid,
 .level-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
   gap: 10px;
+}
+
+.package-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.level-list {
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
 }
 
 .package-list {
@@ -176,9 +185,70 @@ h2 {
   gap: 14px;
 }
 
+.package-card {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+  min-height: 180px;
+  padding: 16px;
+  text-align: left;
+  background: rgba(16, 35, 30, 0.9);
+}
+
+.package-card-main strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.55rem;
+}
+
+.package-card-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.package-card-continue {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.package-card-main span,
+.package-card-continue span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.package-card-continue strong {
+  display: block;
+  margin-top: 3px;
+}
+
 .package-section {
   display: grid;
   gap: 10px;
+}
+
+.level-pack-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 35, 30, 0.9);
+}
+
+.level-pack-header strong {
+  display: block;
+  margin-top: 3px;
 }
 
 .package-header {
@@ -393,6 +463,46 @@ h2 {
   color: var(--warning);
 }
 
+.modal-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(3, 10, 8, 0.72);
+}
+
+.result-dialog {
+  display: grid;
+  gap: 14px;
+  width: min(420px, 100%);
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #10231e;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.result-dialog > span {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.result-stars {
+  color: var(--warning);
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.result-actions {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 8px;
+}
+
 .editor-layout {
   display: grid;
   grid-template-columns: 330px 1fr;
@@ -563,6 +673,10 @@ h2 {
     grid-template-columns: repeat(auto-fill, minmax(164px, 1fr));
   }
 
+  .package-grid {
+    grid-template-columns: 1fr;
+  }
+
   .editor-layout {
     grid-template-columns: 1fr;
   }
@@ -592,12 +706,15 @@ h2 {
   }
 
   .package-header,
+  .level-pack-header,
   .package-meta {
     align-items: start;
   }
 
-  .package-header {
+  .package-header,
+  .level-pack-header {
     display: grid;
+    grid-template-columns: 1fr;
   }
 
   .package-meta {
@@ -611,6 +728,10 @@ h2 {
 
   .level-card {
     height: 232px;
+  }
+
+  .result-actions {
+    grid-template-columns: 1fr;
   }
 
   .editor-actions {
