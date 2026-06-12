@@ -9,7 +9,6 @@ import {
   loadEditorLevels,
   loadLocale,
   loadProgress,
-  getStorageDiagnostics,
   type ProgressMap,
   saveEditorIndex,
   saveEditorLevels,
@@ -224,7 +223,6 @@ function renderEditor(): string {
         </div>
         <h2>${t(state.locale, "editorTitle")}</h2>
         <p class="hint">${t(state.locale, "editorHelp")}</p>
-        ${renderStorageDiagnostics()}
 
         <div class="field-grid">
           ${numberInput("rows", "rows", state.level.rows, 1, 16)}
@@ -267,9 +265,7 @@ function renderEditor(): string {
 }
 
 function renderGrid(mode: "editor" | "play"): string {
-  const smallBoard = state.level.rows <= 5 && state.level.cols <= 5;
-  const gridWidth = smallBoard ? "fit-content" : `min(100%, calc(68vh * ${state.level.cols} / ${state.level.rows}))`;
-  const cellSize = smallBoard ? "46px" : "minmax(0, 1fr)";
+  const cellSize = `${calculateCellSize(mode)}px`;
   const cells: string[] = [];
 
   for (let row = 0; row < state.level.rows; row += 1) {
@@ -292,7 +288,7 @@ function renderGrid(mode: "editor" | "play"): string {
     }
   }
 
-  return `<div class="grid" style="--rows:${state.level.rows};--cols:${state.level.cols};--grid-width:${gridWidth};--cell-size:${cellSize}">${cells.join("")}</div>`;
+  return `<div class="grid ${mode}-grid" style="--rows:${state.level.rows};--cols:${state.level.cols};--cell-size:${cellSize}">${cells.join("")}</div>`;
 }
 
 function bindEvents(): void {
@@ -355,27 +351,6 @@ function bindEvents(): void {
   root.querySelector<HTMLElement>("[data-action='reorder-levels']")?.addEventListener("click", reorderLevels);
   root.querySelector<HTMLElement>("[data-action='save-draft']")?.addEventListener("click", () => saveCurrentPackToFirestore("draft"));
   root.querySelector<HTMLElement>("[data-action='publish-pack']")?.addEventListener("click", () => saveCurrentPackToFirestore("published"));
-  root.querySelector<HTMLElement>("[data-action='rescan-storage']")?.addEventListener("click", rescanStorage);
-}
-
-function renderStorageDiagnostics(): string {
-  const diagnostics = getStorageDiagnostics(state.levels);
-
-  return `
-    <section class="storage-diagnostics">
-      <div>
-        <span>本機關卡</span>
-        <strong>${diagnostics.levelIds.length}</strong>
-      </div>
-      <div>
-        <span>custom-</span>
-        <strong>${diagnostics.customLevelIds.length}</strong>
-      </div>
-      <button data-action="rescan-storage" type="button">重新掃描本機資料</button>
-      <p class="hint">Keys: ${diagnostics.keys.length > 0 ? diagnostics.keys.join(", ") : "無"}</p>
-      <p class="hint">Custom: ${diagnostics.customLevelIds.length > 0 ? diagnostics.customLevelIds.join(", ") : "未偵測到"}</p>
-    </section>
-  `;
 }
 
 function setScreen(screen: Screen): void {
@@ -397,16 +372,6 @@ function openLevel(index: number): void {
   if (!isLevelUnlocked(index)) return;
   switchLevel(index);
   setScreen("play");
-}
-
-function rescanStorage(): void {
-  state.levels = loadEditorLevels(sampleLevels);
-  state.levelIndex = clamp(state.levelIndex, 0, state.levels.length - 1);
-  state.level = state.levels[state.levelIndex];
-  resetToRequiredSeeds();
-  clearRunState();
-  exportJson();
-  render();
 }
 
 function isLevelUnlocked(index: number): boolean {
@@ -832,6 +797,18 @@ function starText(stars: number, maxStars = 3): string {
   return `${stars} / ${maxStars}`;
 }
 
+function calculateCellSize(mode: "editor" | "play"): number {
+  const maxDimension = Math.max(state.level.rows, state.level.cols);
+  const availableWidth = window.innerWidth - 44;
+  const availableHeight = window.innerHeight * (mode === "play" ? 0.58 : 0.52);
+  const boardLimit = Math.min(availableWidth, availableHeight, 620);
+  const gapSize = 6;
+  const paddingSize = 28;
+  const rawSize = Math.floor((boardLimit - paddingSize - gapSize * (maxDimension - 1)) / maxDimension);
+
+  return clamp(rawSize, 30, 56);
+}
+
 function clamp(value: number, min: number, max: number): number {
   if (Number.isNaN(value)) return min;
   return Math.max(min, Math.min(max, value));
@@ -852,5 +829,11 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
 }
+
+let resizeTimer: number | undefined;
+window.addEventListener("resize", () => {
+  window.clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(render, 120);
+});
 
 render();
