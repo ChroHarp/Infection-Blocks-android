@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; }
+  @keyframes ibPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.5); } }
+  @keyframes ibPop { 0% { transform: translateY(14px) scale(0.92); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+  @keyframes ibStar { 0% { transform: scale(0.3) rotate(-12deg); opacity: 0; } 60% { transform: scale(1.18) rotate(4deg); opacity: 1; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(120% 80% at 50% 0%,#eef5ee,#e2e8e3);padding:40px 24px 56px;display:flex;flex-direction:column;align-items:center;gap:18px;font-family:'Fredoka','Noto Sans TC',system-ui,sans-serif;color:#213029;">
+
+  <div style="text-align:center;">
+    <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:0.18em;color:#1f9e62;font-family:'Nunito',sans-serif;">SOFT PETRI · 互動原型</p>
+    <h1 style="margin:0;font-size:26px;font-weight:600;color:#1a261f;">感染方塊 — 柔光培養皿</h1>
+    <p style="margin:8px 0 0;font-size:13px;color:#6e827a;font-family:'Nunito',sans-serif;font-weight:600;">點格子放感染源 → 開始感染 → 看連鎖擴散。真實關卡與規則，可直接試玩。</p>
+  </div>
+
+  <!-- PHONE -->
+  <div style="position:relative;width:330px;height:700px;border-radius:46px;padding:10px;background:linear-gradient(160deg,#f3f4f5,#d6d9dc);box-shadow:0 36px 70px rgba(60,70,80,0.22),0 6px 14px rgba(0,0,0,0.08);">
+    <div style="position:relative;width:100%;height:100%;border-radius:37px;overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(180deg,#f6faf6,#e9f1ea);">
+
+      <!-- status bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px 8px;font-size:12px;color:#213029;flex:0 0 auto;">
+        <span style="font-weight:600;">9:41</span>
+        <div style="display:flex;align-items:center;gap:6px;opacity:0.85;">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="#213029"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1" opacity="0.4"/></svg>
+          <span style="width:20px;height:10px;border:1.4px solid #213029;border-radius:3px;position:relative;display:inline-block;"><i style="position:absolute;top:1.5px;left:1.5px;bottom:1.5px;width:68%;background:#213029;border-radius:1px;display:block;"></i></span>
+        </div>
+      </div>
+
+      <!-- ================= LEVEL SELECT ================= -->
+      <sc-if value="{{ isLevels }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 20px 10px;flex:0 0 auto;">
+            <div style="flex:1;">
+              <div style="font-size:11px;letter-spacing:0.14em;color:#1f9e62;font-weight:600;font-family:'Nunito',sans-serif;">關卡包 01 · 免費</div>
+              <div style="font-size:20px;font-weight:600;">綠芽培養皿</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;">
+              <span style="font-size:15px;color:#ff9f1c;font-weight:700;">★ {{ totalStars }}</span>
+              <span style="font-size:10px;color:#6e827a;font-family:'Nunito',sans-serif;font-weight:700;">{{ completedCount }} / 10 關</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:4px 18px 18px;flex:1;min-height:0;overflow:auto;align-content:start;">
+            <sc-for list="{{ levelCards }}" as="lv" hint-placeholder-count="10">
+              <div onClick="{{ lv.onClick }}" style="background:#ffffff;border:1px solid #e3ebe3;border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:9px;box-shadow:0 4px 12px rgba(31,60,45,0.05);cursor:pointer;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="display:inline-grid;place-items:center;min-width:28px;height:24px;padding:0 7px;border-radius:9px;background:#e6f5ec;color:#1f9e62;font-size:13px;font-weight:600;">{{ lv.num }}</span>
+                  <span style="font-size:11px;letter-spacing:1px;color:{{ lv.starColor }};">{{ lv.starsText }}</span>
+                </div>
+                <div style="height:74px;display:grid;place-items:center;">
+                  <div style="{{ lv.miniGridStyle }}">
+                    <sc-for list="{{ lv.miniCells }}" as="mc" hint-placeholder-count="16"><div style="{{ mc.style }}"></div></sc-for>
+                  </div>
+                </div>
+                <div style="font-size:12px;color:#3a5347;text-align:center;font-weight:500;">{{ lv.name }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ================= PLAY ================= -->
+      <sc-if value="{{ isPlay }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;flex:1;min-height:0;">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 18px 8px;flex:0 0 auto;">
+            <div onClick="{{ onBack }}" style="width:34px;height:34px;border-radius:12px;background:#ffffff;box-shadow:0 2px 6px rgba(31,60,45,0.1);display:grid;place-items:center;color:#2bb673;font-size:19px;cursor:pointer;">‹</div>
+            <div style="flex:1;">
+              <div style="font-size:11px;letter-spacing:0.12em;color:#1f9e62;font-weight:600;font-family:'Nunito',sans-serif;">第 {{ levelNum }} 關</div>
+              <div style="font-size:17px;font-weight:600;">{{ levelName }}</div>
+            </div>
+            <div style="font-size:14px;color:{{ bestColor }};letter-spacing:1px;">{{ bestStarsText }}</div>
+          </div>
+
+          <div style="flex:1;min-height:0;display:grid;place-items:center;overflow:auto;padding:6px 16px;">
+            <div style="padding:14px;border-radius:22px;background:#ffffff;border:1px solid #dfe7df;box-shadow:0 8px 20px rgba(31,60,45,0.07);">
+              <div style="{{ boardGridStyle }}">
+                <sc-for list="{{ board }}" as="cell" hint-placeholder-count="20">
+                  <div style="{{ cell.style }}" onClick="{{ cell.onClick }}"><sc-if value="{{ cell.showDot }}" hint-placeholder-val="{{ true }}"><div style="{{ cell.dotStyle }}"></div></sc-if></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex:0 0 auto;padding:4px 16px 18px;">
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <div style="flex:1;background:#ffffff;border:1px solid #e3ebe3;border-radius:14px;padding:8px 12px;box-shadow:0 3px 8px rgba(31,60,45,0.04);">
+                <div style="font-size:10px;color:#6e827a;font-family:'Nunito',sans-serif;font-weight:700;">感染源</div>
+                <div style="font-size:17px;font-weight:600;margin-top:1px;color:{{ seedColor }};">{{ seedCount }} <span style="color:#a3b3a8;font-size:12px;">/ {{ seedMax }}</span></div>
+              </div>
+              <div style="flex:1;background:#ffffff;border:1px solid #e3ebe3;border-radius:14px;padding:8px 12px;box-shadow:0 3px 8px rgba(31,60,45,0.04);">
+                <div style="font-size:10px;color:#6e827a;font-family:'Nunito',sans-serif;font-weight:700;">三星目標</div>
+                <div style="font-size:15px;font-weight:600;margin-top:1px;color:#ff9f1c;">★★★ <span style="color:#a3b3a8;font-size:12px;">≤{{ targetThree }}</span></div>
+              </div>
+            </div>
+            <p style="margin:0 0 10px;padding:0 2px;font-size:11.5px;color:#6e827a;line-height:1.5;font-family:'Nunito',sans-serif;font-weight:600;min-height:17px;">{{ message }}</p>
+            <div style="display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px;">
+              <div onClick="{{ onUndo }}" style="{{ undoStyle }}">復原</div>
+              <div onClick="{{ onStart }}" style="{{ startStyle }}">開始感染</div>
+              <div onClick="{{ onReset }}" style="{{ resetStyle }}">重置</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VICTORY -->
+        <sc-if value="{{ victoryOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:rgba(230,240,232,0.66);z-index:5;">
+            <div style="width:248px;border-radius:26px;padding:28px 22px 22px;background:#ffffff;border:1px solid #e3ebe3;box-shadow:0 28px 64px rgba(31,60,45,0.22);text-align:center;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;color:#2bb673;font-family:'Nunito',sans-serif;">感染完成 100%</div>
+              <h2 style="font-size:25px;margin:8px 0 0;color:#1a261f;font-weight:600;">通關成功！</h2>
+              <div style="display:flex;justify-content:center;gap:8px;margin:16px 0 10px;">
+                <sc-for list="{{ resultStars }}" as="st" hint-placeholder-count="3"><span style="{{ st.style }}">{{ st.glyph }}</span></sc-for>
+              </div>
+              <div style="font-size:12px;color:#6e827a;margin-bottom:20px;font-family:'Nunito',sans-serif;font-weight:700;">使用 <span style="color:#1f8a55;">{{ seedsUsed }}</span> 感染源{{ recordText }}</div>
+              <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px;">
+                <div onClick="{{ onNext }}" style="{{ nextStyle }}">{{ nextLabel }}</div>
+                <div onClick="{{ onCloseToLevels }}" style="height:46px;border-radius:14px;background:#eef3ee;border:1px solid #dfe7df;color:#213029;font-size:13px;display:grid;place-items:center;font-weight:600;cursor:pointer;">返回</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- FAILURE -->
+        <sc-if value="{{ failureOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:rgba(230,240,232,0.66);z-index:5;">
+            <div style="width:248px;border-radius:26px;padding:28px 22px 22px;background:#ffffff;border:1px solid #f3dadd;box-shadow:0 28px 64px rgba(31,60,45,0.22);text-align:center;">
+              <div style="width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:#ffe9eb;border:2px solid rgba(255,93,108,0.4);display:grid;place-items:center;color:#ff5d6c;font-size:30px;font-weight:700;">!</div>
+              <h2 style="font-size:22px;margin:0;color:#1a261f;font-weight:600;">尚未過關</h2>
+              <p style="font-size:13px;color:#6e827a;margin:10px 0 20px;line-height:1.55;font-family:'Nunito',sans-serif;font-weight:600;">{{ failureMsg }}</p>
+              <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px;">
+                <div onClick="{{ onRetry }}" style="height:46px;border-radius:14px;background:linear-gradient(180deg,#3ed089,#2bb673);color:#06281a;font-weight:600;font-size:15px;display:grid;place-items:center;box-shadow:0 6px 16px rgba(43,182,115,0.3);cursor:pointer;">再試一次</div>
+                <div onClick="{{ onCloseToLevels }}" style="height:46px;border-radius:14px;background:#eef3ee;border:1px solid #dfe7df;color:#213029;font-size:13px;display:grid;place-items:center;font-weight:600;cursor:pointer;">返回</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:120px;height:5px;border-radius:99px;background:rgba(33,48,41,0.28);"></div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:#8b988f;font-family:'Nunito',sans-serif;font-weight:600;">提示：規則為「任一空格被 2 個以上鄰格包圍就會淪陷」，用最少源頭引爆最大連鎖。</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 400, &quot;height&quot;: 820}}">
+class Component extends DCLogic {
+  LEVELS = [
+    { id: "world-1-01", name: "初芽", rows: 6, cols: 1, stars: { three: 5, two: 6, one: 7 }, holes: [], requiredSeeds: [], blockedSeeds: [] },
+    { id: "world-1-02", name: "雙列", rows: 7, cols: 2, stars: { three: 5, two: 6, one: 7 }, holes: [], requiredSeeds: [], blockedSeeds: [] },
+    { id: "world-1-03", name: "田字", rows: 4, cols: 4, stars: { three: 4, two: 5, one: 6 }, holes: [], requiredSeeds: [], blockedSeeds: [] },
+    { id: "world-1-04", name: "苗圃", rows: 6, cols: 4, stars: { three: 5, two: 6, one: 7 }, holes: [], requiredSeeds: [], blockedSeeds: [] },
+    { id: "world-1-05", name: "缺角", rows: 7, cols: 2, stars: { three: 5, two: 6, one: 7 }, holes: [[6, 0]], requiredSeeds: [], blockedSeeds: [] },
+    { id: "world-1-06", name: "偏移", rows: 6, cols: 2, stars: { three: 4, two: 5, one: 6 }, holes: [[5, 1]], requiredSeeds: [], blockedSeeds: [] },
+    { id: "world-1-07", name: "十字徑", rows: 6, cols: 3, stars: { three: 5, two: 6, one: 7 }, holes: [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [0, 2], [1, 2], [3, 2], [4, 2], [5, 2]], requiredSeeds: [[1, 1]], blockedSeeds: [] },
+    { id: "world-1-08", name: "階梯", rows: 6, cols: 3, stars: { three: 5, two: 6, one: 7 }, holes: [[0, 0], [0, 2], [2, 0], [2, 2], [3, 0], [3, 2], [4, 0], [4, 2], [5, 0]], requiredSeeds: [[3, 1]], blockedSeeds: [] },
+    { id: "world-1-09", name: "禁區", rows: 7, cols: 2, stars: { three: 6, two: 7, one: 8 }, holes: [], requiredSeeds: [], blockedSeeds: [[3, 0]] },
+    { id: "world-1-10", name: "迷徑", rows: 6, cols: 3, stars: { three: 5, two: 6, one: 7 }, holes: [[1, 0], [3, 0], [5, 0]], requiredSeeds: [], blockedSeeds: [[3, 1], [1, 2]] }
+  ];
+
+  PROG_KEY = "infection-proto-soft.progress";
+
+  state = {
+    screen: "levels",
+    levelIndex: 0,
+    seeds: [],
+    infected: [],
+    wave: [],
+    phase: "ready",
+    victoryOpen: false,
+    failureOpen: false,
+    failureReason: "",
+    message: "",
+    progress: {}
+  };
+
+  componentDidMount() {
+    this.setState({ progress: this.loadProgress() });
+  }
+
+  loadProgress() {
+    try { return JSON.parse(localStorage.getItem(this.PROG_KEY)) || {}; } catch { return {}; }
+  }
+  saveProgress(p) {
+    try { localStorage.setItem(this.PROG_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+  }
+
+  key(coord) { return coord[0] + ":" + coord[1]; }
+  maxPassing(lvl) { return lvl.stars.one ?? lvl.stars.two ?? lvl.stars.three; }
+  targetCount(lvl) { return lvl.rows * lvl.cols - lvl.holes.length; }
+  wait(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+  kindOf(lvl, r, c) {
+    const k = r + ":" + c;
+    if (lvl.holes.some((h) => h[0] + ":" + h[1] === k)) return "hole";
+    if (lvl.requiredSeeds.some((h) => h[0] + ":" + h[1] === k)) return "required";
+    if (lvl.blockedSeeds.some((h) => h[0] + ":" + h[1] === k)) return "blocked";
+    return "playable";
+  }
+
+  starsFor(lvl, used) {
+    if (used <= lvl.stars.three) return 3;
+    if (lvl.stars.two !== null && used <= lvl.stars.two) return 2;
+    if (lvl.stars.one !== null && used <= lvl.stars.one) return 1;
+    return 0;
+  }
+
+  runInfection(lvl, seeds) {
+    const seedSet = new Set(seeds.map((s) => this.key(s)));
+    const holeSet = new Set(lvl.holes.map((s) => this.key(s)));
+    const blockedSet = new Set(lvl.blockedSeeds.map((s) => this.key(s)));
+    const requiredSet = new Set(lvl.requiredSeeds.map((s) => this.key(s)));
+
+    if (seedSet.size > this.maxPassing(lvl)) return { completed: false, waves: [], failureReason: "tooManySeeds", seedsUsed: seedSet.size, stars: 0, infectedArr: [...seedSet] };
+    for (const req of requiredSet) if (!seedSet.has(req)) return { completed: false, waves: [], failureReason: "missingRequiredSeed", seedsUsed: seedSet.size, stars: 0, infectedArr: [...seedSet] };
+    for (const s of seedSet) if (blockedSet.has(s)) return { completed: false, waves: [], failureReason: "blockedSeedSelected", seedsUsed: seedSet.size, stars: 0, infectedArr: [...seedSet] };
+
+    const infected = new Set(seedSet);
+    const waves = [];
+    const nextWave = () => {
+      const w = [];
+      for (let r = 0; r < lvl.rows; r++) for (let c = 0; c < lvl.cols; c++) {
+        const k = r + ":" + c;
+        if (holeSet.has(k) || infected.has(k)) continue;
+        let n = 0;
+        [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]].forEach(([nr, nc]) => {
+          if (nr >= 0 && nr < lvl.rows && nc >= 0 && nc < lvl.cols && infected.has(nr + ":" + nc)) n++;
+        });
+        if (n >= 2) w.push([r, c]);
+      }
+      return w;
+    };
+    let w = nextWave();
+    while (w.length > 0) { waves.push(w); w.forEach((c) => infected.add(this.key(c))); w = nextWave(); }
+
+    const completed = infected.size === this.targetCount(lvl);
+    return { completed, waves, failureReason: completed ? undefined : "incomplete", seedsUsed: seedSet.size, stars: completed ? this.starsFor(lvl, seedSet.size) : 0, infectedArr: [...infected] };
+  }
+
+  // ---- interactions ----
+  selectLevel(i) {
+    const lvl = this.LEVELS[i];
+    this.setState({
+      screen: "play", levelIndex: i,
+      seeds: lvl.requiredSeeds.map((c) => [c[0], c[1]]),
+      infected: [], wave: [], phase: "ready",
+      victoryOpen: false, failureOpen: false, failureReason: "",
+      message: "點任意格子放置感染源，越少越高分。"
+    });
+  }
+
+  toggleSeed(r, c) {
+    if (this.state.phase !== "ready") return;
+    const lvl = this.LEVELS[this.state.levelIndex];
+    if (this.kindOf(lvl, r, c) !== "playable") return;
+    const k = r + ":" + c;
+    const exists = this.state.seeds.some((s) => this.key(s) === k);
+    if (!exists && this.state.seeds.length >= this.maxPassing(lvl)) {
+      this.setState({ message: "已達感染源上限，先移除一個再放。" });
+      return;
+    }
+    const seeds = exists ? this.state.seeds.filter((s) => this.key(s) !== k) : [...this.state.seeds, [r, c]];
+    this.setState({ seeds, message: "點任意格子放置感染源，越少越高分。" });
+  }
+
+  undo() {
+    if (this.state.phase !== "ready") return;
+    const lvl = this.LEVELS[this.state.levelIndex];
+    const req = new Set(lvl.requiredSeeds.map((s) => this.key(s)));
+    const rev = [...this.state.seeds].reverse();
+    const removable = rev.find((s) => !req.has(this.key(s)));
+    if (!removable) return;
+    const rk = this.key(removable);
+    this.setState({ seeds: this.state.seeds.filter((s) => this.key(s) !== rk) });
+  }
+
+  reset() {
+    if (this.state.phase !== "ready") return;
+    const lvl = this.LEVELS[this.state.levelIndex];
+    this.setState({ seeds: lvl.requiredSeeds.map((c) => [c[0], c[1]]), infected: [], wave: [], message: "已重置。" });
+  }
+
+  async start() {
+    if (this.state.phase !== "ready" || this.state.seeds.length === 0) return;
+    const lvl = this.LEVELS[this.state.levelIndex];
+    const result = this.runInfection(lvl, this.state.seeds);
+
+    if (result.failureReason && result.waves.length === 0) {
+      const msg = { tooManySeeds: "感染源超過本關上限。", missingRequiredSeed: "還有必放感染源沒放置。", blockedSeedSelected: "紅色禁放格不能當初始感染源。" };
+      this.setState({ failureOpen: true, failureReason: result.failureReason, message: msg[result.failureReason] || "" });
+      return;
+    }
+
+    this.setState({ phase: "spreading", infected: this.state.seeds.map((s) => this.key(s)), wave: [], message: "感染擴散中…" });
+
+    const grown = [...this.state.seeds.map((s) => this.key(s))];
+    for (const w of result.waves) {
+      await this.wait(300);
+      const wk = w.map((c) => this.key(c));
+      wk.forEach((k) => grown.push(k));
+      this.setState({ wave: wk, infected: [...grown] });
+    }
+    await this.wait(300);
+
+    if (result.completed) {
+      const prog = { ...this.state.progress };
+      const cur = prog[lvl.id];
+      const better = !cur || result.stars > cur.bestStars || (result.stars === cur.bestStars && result.seedsUsed < cur.bestSeeds);
+      if (better) { prog[lvl.id] = { completed: true, bestStars: result.stars, bestSeeds: result.seedsUsed }; this.saveProgress(prog); }
+      this.setState({ phase: "done", wave: [], infected: result.infectedArr, victoryOpen: true, lastStars: result.stars, lastSeeds: result.seedsUsed, isNewRecord: better, progress: prog });
+    } else {
+      this.setState({ phase: "ready", wave: [], infected: [], failureOpen: true, failureReason: "incomplete", message: "" });
+    }
+  }
+
+  nextLevel() {
+    const i = this.state.levelIndex + 1;
+    if (i < this.LEVELS.length) this.selectLevel(i);
+    else this.setState({ screen: "levels", victoryOpen: false });
+  }
+  retry() {
+    this.setState({ failureOpen: false, infected: [], wave: [], phase: "ready", message: "再試一次，調整感染源位置。" });
+  }
+  toLevels() { this.setState({ screen: "levels", victoryOpen: false, failureOpen: false }); }
+
+  // ---- styles ----
+  cellStyles(cell, rad) {
+    const base = "width:" + cell + "px;height:" + cell + "px;border-radius:" + rad + "px;display:grid;place-items:center;";
+    return {
+      empty: base + "background:#e3ebe4;box-shadow:inset 0 -2px 0 rgba(0,0,0,0.05);cursor:pointer;",
+      emptyLocked: base + "background:#e3ebe4;box-shadow:inset 0 -2px 0 rgba(0,0,0,0.05);",
+      seed: base + "background:#9fe0bb;box-shadow:inset 0 0 0 2px #2bb673;cursor:pointer;",
+      infected: base + "background:#bfe9cf;",
+      spreading: base + "background:#ffd9cc;box-shadow:0 0 0 3px rgba(255,122,89,0.5);animation:ibPulse 1.1s ease-in-out infinite;",
+      required: base + "background:#d6e8ff;box-shadow:inset 0 0 0 2px #4c9aff;",
+      blocked: base + "background:#ffe1e4;box-shadow:inset 0 0 0 2px #ff5d6c;background-image:repeating-linear-gradient(45deg,rgba(255,93,108,0.25) 0 4px,transparent 4px 8px);",
+      blockedInf: base + "background:#bfe9cf;box-shadow:inset 0 0 0 2px #ff5d6c;",
+      hole: base + "background:transparent;"
+    };
+  }
+
+  starStr(n) { return "★".repeat(n) + "☆".repeat(3 - n); }
+
+  buildMini(lvl) {
+    const maxDim = Math.max(lvl.rows, lvl.cols);
+    const mc = Math.max(5, Math.floor((66 - (maxDim - 1) * 2) / maxDim));
+    const rad = Math.max(1, Math.round(mc * 0.22));
+    const cells = [];
+    for (let r = 0; r < lvl.rows; r++) for (let c = 0; c < lvl.cols; c++) {
+      const k = this.kindOf(lvl, r, c);
+      const bg = k === "hole" ? "transparent" : k === "required" ? "#9cc2ff" : k === "blocked" ? "#ffb3a0" : "#cfe0d4";
+      cells.push({ style: "width:" + mc + "px;height:" + mc + "px;border-radius:" + rad + "px;background:" + bg + ";" });
+    }
+    return { miniCells: cells, miniGridStyle: "display:grid;grid-template-columns:repeat(" + lvl.cols + "," + mc + "px);gap:2px;justify-content:center;" };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const lvl = this.LEVELS[s.levelIndex];
+
+    // level cards
+    const levelCards = this.LEVELS.map((lv, i) => {
+      const p = s.progress[lv.id];
+      const mini = this.buildMini(lv);
+      return {
+        num: String(i + 1).padStart(2, "0"),
+        name: lv.name,
+        starsText: p ? this.starStr(p.bestStars) : "☆☆☆",
+        starColor: p ? "#ff9f1c" : "#c4cfc7",
+        onClick: () => this.selectLevel(i),
+        miniCells: mini.miniCells,
+        miniGridStyle: mini.miniGridStyle
+      };
+    });
+    const completedCount = this.LEVELS.filter((lv) => s.progress[lv.id]?.completed).length;
+    const totalStars = this.LEVELS.reduce((a, lv) => a + (s.progress[lv.id]?.bestStars ?? 0), 0);
+
+    // board
+    const cell = Math.min(Math.floor(258 / lvl.cols), Math.floor(300 / lvl.rows), 52);
+    const rad = Math.max(6, Math.round(cell * 0.22));
+    const ST = this.cellStyles(cell, rad);
+    const infSet = new Set(s.infected);
+    const waveSet = new Set(s.wave);
+    const seedSet = new Set(s.seeds.map((x) => this.key(x)));
+    const dot = {
+      green: "width:36%;height:36%;border-radius:50%;background:#2bb673;",
+      dark: "width:46%;height:46%;border-radius:50%;background:#1f8a55;",
+      coral: "width:36%;height:36%;border-radius:50%;background:#ff7a59;",
+      blue: "width:36%;height:36%;border-radius:50%;background:#4c9aff;"
+    };
+    const board = [];
+    for (let r = 0; r < lvl.rows; r++) for (let c = 0; c < lvl.cols; c++) {
+      const k = r + ":" + c;
+      const kind = this.kindOf(lvl, r, c);
+      let style, showDot = false, dotStyle = "", onClick;
+      if (kind === "hole") { style = ST.hole; }
+      else if (kind === "blocked") {
+        if (infSet.has(k)) { style = ST.blockedInf; showDot = true; dotStyle = dot.green; } else { style = ST.blocked; }
+      } else if (kind === "required") { style = ST.required; showDot = true; dotStyle = dot.blue; }
+      else { // playable
+        if (waveSet.has(k)) { style = ST.spreading; showDot = true; dotStyle = dot.coral; }
+        else if (infSet.has(k)) { style = ST.infected; showDot = true; dotStyle = dot.green; }
+        else if (seedSet.has(k)) { style = ST.seed; showDot = true; dotStyle = dot.dark; onClick = () => this.toggleSeed(r, c); }
+        else { style = (s.phase === "ready") ? ST.empty : ST.emptyLocked; if (s.phase === "ready") onClick = () => this.toggleSeed(r, c); }
+      }
+      board.push({ style, showDot, dotStyle, onClick });
+    }
+    const boardGridStyle = "display:grid;grid-template-columns:repeat(" + lvl.cols + "," + cell + "px);gap:6px;justify-content:center;";
+
+    // play meta
+    const seedCount = s.seeds.length;
+    const seedMax = this.maxPassing(lvl);
+    const best = s.progress[lvl.id];
+    const removable = s.seeds.length > lvl.requiredSeeds.length;
+    const ready = s.phase === "ready";
+    const startEnabled = ready && seedCount > 0;
+    const btnSecBase = "height:46px;border-radius:14px;font-size:13px;display:grid;place-items:center;font-weight:600;";
+    const undoEnabled = ready && removable;
+    const undoStyle = btnSecBase + (undoEnabled ? "background:#eef3ee;border:1px solid #dfe7df;color:#213029;cursor:pointer;" : "background:#f1f3f1;border:1px solid #e8ebe8;color:#b7c2bb;");
+    const resetStyle = btnSecBase + (ready ? "background:#eef3ee;border:1px solid #dfe7df;color:#213029;cursor:pointer;" : "background:#f1f3f1;border:1px solid #e8ebe8;color:#b7c2bb;");
+    const startStyle = "height:46px;border-radius:14px;font-size:15px;display:grid;place-items:center;font-weight:600;" + (startEnabled ? "background:linear-gradient(180deg,#3ed089,#2bb673);color:#06281a;box-shadow:0 6px 16px rgba(43,182,115,0.3);cursor:pointer;" : "background:#cfe0d4;color:#8aa595;");
+
+    // result
+    const lastStars = s.lastStars ?? 0;
+    const resultStars = [0, 1, 2].map((i) => {
+      const on = i < lastStars;
+      return {
+        glyph: on ? "★" : "☆",
+        style: "font-size:42px;line-height:1;color:" + (on ? "#ff9f1c" : "#e0d2b8") + ";"
+      };
+    });
+    const hasNext = s.levelIndex + 1 < this.LEVELS.length;
+    const nextStyle = "height:46px;border-radius:14px;font-size:15px;display:grid;place-items:center;font-weight:600;background:linear-gradient(180deg,#3ed089,#2bb673);color:#06281a;box-shadow:0 6px 16px rgba(43,182,115,0.3);cursor:pointer;";
+    const failMsgMap = { incomplete: "仍有格子沒被感染，試著讓源頭彼此「夾擊」更多空格。", tooManySeeds: "感染源超過本關上限，用更少的源頭。", missingRequiredSeed: "藍色必放格一定要選為感染源。", blockedSeedSelected: "紅色禁放格不能當初始感染源。" };
+
+    return {
+      isLevels: s.screen === "levels",
+      isPlay: s.screen === "play",
+      levelCards, completedCount, totalStars,
+      levelNum: String(s.levelIndex + 1).padStart(2, "0"),
+      levelName: lvl.name,
+      bestStarsText: best ? this.starStr(best.bestStars) : "☆☆☆",
+      bestColor: best ? "#ff9f1c" : "#c4cfc7",
+      board, boardGridStyle,
+      seedCount, seedMax,
+      seedColor: seedCount > seedMax ? "#ff5d6c" : "#1f8a55",
+      targetThree: lvl.stars.three,
+      message: s.message,
+      undoStyle, resetStyle, startStyle,
+      onBack: () => this.toLevels(),
+      onUndo: () => this.undo(),
+      onReset: () => this.reset(),
+      onStart: () => this.start(),
+      victoryOpen: !!s.victoryOpen,
+      failureOpen: !!s.failureOpen,
+      resultStars,
+      seedsUsed: s.lastSeeds ?? 0,
+      recordText: s.isNewRecord ? " · 刷新最佳！" : "",
+      hasNext, nextLabel: hasNext ? "下一關" : "回到關卡",
+      nextStyle,
+      onNext: () => this.nextLevel(),
+      onRetry: () => this.retry(),
+      onCloseToLevels: () => this.toLevels(),
+      failureMsg: failMsgMap[s.failureReason] || "再試一次。"
+    };
+  }
+}
+</script>
+</body>
+</html>
