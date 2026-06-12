@@ -34,6 +34,8 @@ interface AppState {
   waveCells: Set<string>;
   isSpreading: boolean;
   victoryOpen: boolean;
+  failureOpen: boolean;
+  boardShakeKey: number;
   lastStars: 0 | 1 | 2 | 3;
   progress: ProgressMap;
 }
@@ -68,6 +70,8 @@ const state: AppState = {
   waveCells: new Set(),
   isSpreading: false,
   victoryOpen: false,
+  failureOpen: false,
+  boardShakeKey: 0,
   lastStars: 0,
   progress: loadProgress()
 };
@@ -286,7 +290,7 @@ function renderPlayScreen(): string {
         <div class="status-stars">${progress?.completed ? "★".repeat(progress.bestStars) : "☆☆☆"}</div>
       </header>
 
-      <section class="board-stage">
+      <section class="board-stage ${state.boardShakeKey > 0 ? "limit-shake" : ""}">
         ${renderGrid("play")}
       </section>
 
@@ -310,6 +314,7 @@ function renderPlayScreen(): string {
       </section>
 
       ${state.victoryOpen ? renderVictoryDialog() : ""}
+      ${state.failureOpen ? renderFailureDialog() : ""}
     </section>
   `;
 }
@@ -321,10 +326,16 @@ function renderVictoryDialog(): string {
   return `
     <div class="modal-backdrop" role="dialog" aria-modal="true">
       <section class="result-dialog">
-        <span>${t(state.locale, "completed")}</span>
+        <div class="result-burst" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <span class="result-kicker">${t(state.locale, "completed")}</span>
         <h2>${t(state.locale, "victoryTitle")}</h2>
-        <div class="result-stars">${"★".repeat(state.lastStars)}${"☆".repeat(3 - state.lastStars)}</div>
-        <p>${t(state.locale, "victoryMessage")}</p>
+        ${renderResultStars()}
+        <p class="result-message">${t(state.locale, "victoryMessage")}</p>
         <div class="result-actions">
           <button class="primary-action" data-action="next-after-win" ${hasNext ? "" : "disabled"}>${t(state.locale, "nextLevel")}</button>
           <button data-action="exit-after-win">${t(state.locale, "backToLevels")}</button>
@@ -332,6 +343,59 @@ function renderVictoryDialog(): string {
       </section>
     </div>
   `;
+}
+
+function renderResultStars(): string {
+  const stars = Array.from({ length: 3 }, (_, index) => {
+    const filled = index < state.lastStars;
+    const label = filled ? "filled" : "empty";
+    const glyph = filled ? "&#9733;" : "&#9734;";
+
+    return `<span class="result-star ${label}" style="--star-index:${index}">${glyph}</span>`;
+  }).join("");
+
+  return `<div class="result-stars" aria-label="${t(state.locale, "starsEarned")}: ${state.lastStars} / 3">${stars}</div>`;
+}
+
+function renderFailureDialog(): string {
+  const message = t(state.locale, state.messageKey === "completed" ? "failed" : state.messageKey);
+
+  return `
+    <div class="modal-backdrop" role="dialog" aria-modal="true">
+      <section class="result-dialog failure-dialog">
+        <span class="result-kicker">${modalText("failureKicker")}</span>
+        <h2>${t(state.locale, "failed")}</h2>
+        <div class="failure-mark" aria-hidden="true">!</div>
+        <p class="result-message">${message}</p>
+        <div class="result-actions">
+          <button class="primary-action" data-action="return-after-fail">${modalText("returnToLevel")}</button>
+          <button data-action="exit-after-fail">${modalText("exitLevel")}</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function modalText(key: "failureKicker" | "returnToLevel" | "exitLevel"): string {
+  const text: Record<Locale, Record<typeof key, string>> = {
+    "zh-Hant": {
+      failureKicker: "感染失敗",
+      returnToLevel: "回到關卡",
+      exitLevel: "退出"
+    },
+    en: {
+      failureKicker: "Infection Failed",
+      returnToLevel: "Back to Level",
+      exitLevel: "Exit"
+    },
+    ja: {
+      failureKicker: "感染失敗",
+      returnToLevel: "ステージに戻る",
+      exitLevel: "終了"
+    }
+  };
+
+  return text[state.locale][key];
 }
 
 function renderEditor(): string {
@@ -443,6 +507,8 @@ function bindEvents(): void {
   root.querySelector<HTMLElement>("[data-action='back-levels']")?.addEventListener("click", () => setScreen("levels"));
   root.querySelector<HTMLElement>("[data-action='next-after-win']")?.addEventListener("click", openNextLevelAfterWin);
   root.querySelector<HTMLElement>("[data-action='exit-after-win']")?.addEventListener("click", exitAfterWin);
+  root.querySelector<HTMLElement>("[data-action='return-after-fail']")?.addEventListener("click", returnAfterFail);
+  root.querySelector<HTMLElement>("[data-action='exit-after-fail']")?.addEventListener("click", exitAfterFail);
   root.querySelector<HTMLElement>("[data-action='start-infection']")?.addEventListener("click", startInfection);
   root.querySelector<HTMLElement>("[data-action='undo']")?.addEventListener("click", undoSeed);
   root.querySelector<HTMLElement>("[data-action='reset-seeds']")?.addEventListener("click", resetPlayState);
@@ -494,6 +560,7 @@ function setScreen(screen: Screen): void {
   state.screen = screen;
   if (screen === "packages" || screen === "levels") {
     state.victoryOpen = false;
+    state.failureOpen = false;
   }
   if (screen === "play") {
     syncRequiredSeeds();
@@ -534,6 +601,16 @@ function openNextLevelAfterWin(): void {
 
 function exitAfterWin(): void {
   state.victoryOpen = false;
+  setScreen("levels");
+}
+
+function returnAfterFail(): void {
+  state.failureOpen = false;
+  render();
+}
+
+function exitAfterFail(): void {
+  state.failureOpen = false;
   setScreen("levels");
 }
 
@@ -591,6 +668,11 @@ function toggleSeed(row: number, col: number): void {
   const key = `${row}:${col}`;
   const selected = state.seeds.some((coord) => coordKey(coord) === key);
 
+  if (!selected && state.seeds.length >= maxPassingSeeds(state.level)) {
+    triggerSeedLimitFeedback();
+    return;
+  }
+
   state.seeds = selected
     ? state.seeds.filter((coord) => coordKey(coord) !== key)
     : uniqueCoords([...state.seeds, [row, col]]);
@@ -598,7 +680,20 @@ function toggleSeed(row: number, col: number): void {
   state.resultInfected = new Set();
   state.waveCells = new Set();
   state.lastStars = 0;
+  state.failureOpen = false;
   state.messageKey = "readyToInfect";
+}
+
+function triggerSeedLimitFeedback(): void {
+  state.boardShakeKey += 1;
+  state.messageKey = "tooManySeeds";
+  const shakeKey = state.boardShakeKey;
+
+  window.setTimeout(() => {
+    if (state.boardShakeKey !== shakeKey) return;
+    state.boardShakeKey = 0;
+    render();
+  }, 280);
 }
 
 async function startInfection(): Promise<void> {
@@ -608,9 +703,12 @@ async function startInfection(): Promise<void> {
   state.resultInfected = new Set(state.seeds.map(coordKey));
   state.waveCells = new Set();
   state.lastStars = 0;
+  state.victoryOpen = false;
+  state.failureOpen = false;
 
   if (result.failureReason && result.waves.length === 0) {
     state.messageKey = result.failureReason;
+    state.failureOpen = true;
     render();
     return;
   }
@@ -638,6 +736,8 @@ async function startInfection(): Promise<void> {
   if (result.completed) {
     recordProgress(result.stars, result.seedsUsed);
     state.victoryOpen = true;
+  } else {
+    state.failureOpen = true;
   }
 
   render();
@@ -675,6 +775,8 @@ function resetPlayState(): void {
   if (state.isSpreading) return;
   resetToRequiredSeeds();
   clearRunState();
+  state.failureOpen = false;
+  state.victoryOpen = false;
   state.messageKey = "readyToInfect";
   render();
 }
@@ -683,6 +785,8 @@ function clearRunState(): void {
   state.resultInfected = new Set();
   state.waveCells = new Set();
   state.lastStars = 0;
+  state.failureOpen = false;
+  state.victoryOpen = false;
 }
 
 function updateField(input: HTMLInputElement | HTMLSelectElement): void {
@@ -771,6 +875,7 @@ function switchLevel(index: number): void {
   clearRunState();
   state.isSpreading = false;
   state.victoryOpen = false;
+  state.failureOpen = false;
   state.messageKey = "readyToInfect";
   exportJson();
   saveEditorIndex(nextIndex);
