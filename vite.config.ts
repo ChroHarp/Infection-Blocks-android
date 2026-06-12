@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { resolve } from "node:path";
 
 export default defineConfig({
   server: {
@@ -6,6 +7,12 @@ export default defineConfig({
     strictPort: false
   },
   build: {
-    target: "es2022"
+    target: "es2022",
+    rollupOptions: {
+      input: {
+        app: resolve(__dirname, "index.html"),
+        editor: resolve(__dirname, "editor.html")
+      }
+    }
   }
 });

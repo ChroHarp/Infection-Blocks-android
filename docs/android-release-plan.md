@@ -9,13 +9,67 @@ This project is structured as a Vite web app first, then packaged for Android wi
 - Traditional Chinese, English, and Japanese UI strings through one shared i18n dictionary.
 - Star rating is configured by which thresholds are filled in. Fill only 3 stars for `3 stars / fail`, fill 3 and 2 stars for `3 stars / 2 stars / fail`, or fill all three thresholds for `3 / 2 / 1 / fail`.
 - No account system.
-- No database.
+- No player-facing database calls.
 - No custom server.
 - Monetization target: free early levels, paid unlock later.
 
-## When Backend Becomes Necessary
+## Editor and Player App Split
 
-Do not add a backend for the first prototype. Add a hosted service such as Firebase only when one of these becomes real:
+The project should be treated as two products that share game rules and level types:
+
+- Player app: packaged with Capacitor for Android, reads bundled level data, and should not call Firestore at runtime for the current MVP.
+- Level editor: internal web tool for editing level packs and saving drafts/published data to Firestore.
+
+Local entry points:
+
+- Player app: `http://127.0.0.1:5173/`
+- Editor: `http://127.0.0.1:5173/editor.html`
+
+During early development the editor can remain open. Before sharing it broadly, add Google sign-in and restrict writes by allowed Gmail accounts in Firestore Security Rules.
+
+Recommended data flow:
+
+1. Edit level packs in the editor.
+2. Save draft or published level pack documents to Firestore.
+3. Before release, run a sync/export step that reads published packs from Firestore.
+4. Generate source-controlled bundled data under `src/data/`.
+5. Build the Android player app from bundled data.
+
+This keeps the first Android app offline and deterministic while still giving the editor proper cloud persistence.
+
+Firestore collection:
+
+- `levelPacks/{packId}` stores one package document.
+- Each document should use `status: "draft" | "published"`.
+- Coordinates are stored as objects like `{ "row": 1, "col": 2 }` because Firestore does not support nested arrays.
+- Development Security Rules must include `levelPacks`; opening only another collection such as `audience_votes` will not allow editor writes.
+
+Development-only Firestore rule example:
+
+```text
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /levelPacks/{doc} {
+      allow read, write: if true;
+    }
+  }
+}
+```
+
+Tighten this with Google sign-in before sharing the editor outside your own development environment.
+
+Developer sync command:
+
+```bash
+npm run firebase:push-levels
+```
+
+This pushes the local bundled `sampleLevelPacks` to Firestore as `published` documents. Firestore Security Rules must allow the current client to write during development, or this command will fail with `PERMISSION_DENIED`.
+
+## When Player Backend Becomes Necessary
+
+Do not add runtime Firestore calls to the player app for the first prototype. Add a player-facing backend only when one of these becomes real:
 
 - cloud save across devices;
 - leaderboards;
@@ -25,6 +79,25 @@ Do not add a backend for the first prototype. Add a hosted service such as Fireb
 - receipt validation for more complex purchases.
 
 For the first paid unlock, prefer Google Play Billing on Android. Keep the unlocked state cached locally, and add server-side receipt validation only if abuse becomes a practical issue.
+
+## Level Pack Format
+
+Level unlocks and monetization should be controlled at package level. The local bundled data exports packages first, then can flatten levels for older UI code.
+
+```json
+{
+  "id": "world-1",
+  "order": 1,
+  "titleKey": "pack.world1",
+  "access": "free",
+  "levels": []
+}
+```
+
+- `access`: `free`, `paid`, or `conditional`.
+- `purchaseId`: optional product id for paid packages, such as `unlock_full_game`.
+- `unlockAfterPackId`: optional package dependency for conditional unlocks.
+- `levels`: the level objects in this package.
 
 ## Level Format
 

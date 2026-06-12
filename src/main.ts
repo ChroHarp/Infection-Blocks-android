@@ -1,7 +1,7 @@
 import "./styles.css";
 import { coordKey, uniqueCoords } from "./domain/coords";
 import { maxPassingSeeds, runInfection } from "./domain/engine";
-import type { CellCoord, CellKind, Level, Locale } from "./domain/types";
+import type { CellCoord, CellKind, Level, LevelPack, LevelPackStatus, Locale } from "./domain/types";
 import { sampleLevels } from "./data/sampleLevels";
 import { t } from "./i18n";
 import {
@@ -48,11 +48,12 @@ const root = appRoot;
 const initialLevels = loadEditorLevels(sampleLevels);
 const initialIndex = loadEditorIndex(initialLevels.length);
 const initialLevel = initialLevels[initialIndex];
-const editorEnabled = new URLSearchParams(window.location.search).get("editor") === "1";
+const searchParams = new URLSearchParams(window.location.search);
+const editorEnabled = searchParams.get("editor") === "1" || window.location.pathname.endsWith("/editor.html");
 
 const state: AppState = {
   locale: loadLocale(),
-  screen: "levels",
+  screen: editorEnabled ? "editor" : "levels",
   levels: initialLevels,
   levelIndex: initialIndex,
   level: initialLevel,
@@ -216,7 +217,11 @@ function renderEditor(): string {
           <div class="level-position">${state.levelIndex + 1} / ${state.levels.length}</div>
           <button data-action="next-level" type="button" ${state.levelIndex === state.levels.length - 1 ? "disabled" : ""}>${t(state.locale, "nextLevel")}</button>
         </div>
-        <button data-action="new-level" type="button">${t(state.locale, "newLevel")}</button>
+        <div class="editor-actions">
+          <button data-action="new-level" type="button">${t(state.locale, "newLevel")}</button>
+          <button data-action="duplicate-level" type="button">${t(state.locale, "duplicateLevel")}</button>
+          <button data-action="reorder-levels" type="button">${t(state.locale, "reorderLevels")}</button>
+        </div>
         <h2>${t(state.locale, "editorTitle")}</h2>
         <p class="hint">${t(state.locale, "editorHelp")}</p>
         ${renderStorageDiagnostics()}
@@ -225,6 +230,7 @@ function renderEditor(): string {
           ${numberInput("rows", "rows", state.level.rows, 1, 16)}
           ${numberInput("cols", "cols", state.level.cols, 1, 16)}
           ${textInput("id", "levelId", state.level.id)}
+          ${textInput("packId", "packId", state.level.packId)}
           ${numberInput("star3", "star3Limit", state.level.stars.three, 1, 99)}
           ${optionalNumberInput("star2", "star2Limit", state.level.stars.two, 1, 99)}
           ${optionalNumberInput("star1", "star1Limit", state.level.stars.one, 1, 99)}
@@ -245,6 +251,8 @@ function renderEditor(): string {
           <button data-action="export-json">${t(state.locale, "exportJson")}</button>
           <button data-action="copy-json">${t(state.locale, "copyJson")}</button>
           <button data-action="import-json">${t(state.locale, "importJson")}</button>
+          <button data-action="save-draft">${t(state.locale, "saveDraft")}</button>
+          <button data-action="publish-pack">${t(state.locale, "publishPack")}</button>
         </div>
       </aside>
 
@@ -343,6 +351,10 @@ function bindEvents(): void {
     render();
   });
   root.querySelector<HTMLElement>("[data-action='new-level']")?.addEventListener("click", createLevel);
+  root.querySelector<HTMLElement>("[data-action='duplicate-level']")?.addEventListener("click", duplicateLevel);
+  root.querySelector<HTMLElement>("[data-action='reorder-levels']")?.addEventListener("click", reorderLevels);
+  root.querySelector<HTMLElement>("[data-action='save-draft']")?.addEventListener("click", () => saveCurrentPackToFirestore("draft"));
+  root.querySelector<HTMLElement>("[data-action='publish-pack']")?.addEventListener("click", () => saveCurrentPackToFirestore("published"));
   root.querySelector<HTMLElement>("[data-action='rescan-storage']")?.addEventListener("click", rescanStorage);
 }
 
@@ -522,6 +534,7 @@ function updateField(input: HTMLInputElement | HTMLSelectElement): void {
   if (!field) return;
 
   if (field === "id") state.level.id = input.value.trim() || "custom-level";
+  if (field === "packId") state.level.packId = input.value.trim() || "custom";
   if (field === "rows") state.level.rows = clamp(Number(input.value), 1, 16);
   if (field === "cols") state.level.cols = clamp(Number(input.value), 1, 16);
   if (field === "free" && input instanceof HTMLInputElement) state.level.free = input.checked;
@@ -607,24 +620,28 @@ function switchLevel(index: number): void {
 
 function createLevel(): void {
   saveCurrentLevel();
-  const order = state.levels.length + 1;
+  const packId = state.level.packId || "custom";
+  const insertIndex = lastIndexInPack(packId) + 1;
+  const order = nextOrderInPack(packId);
+  const id = nextLevelId(packId);
   const level: Level = {
-    id: `custom-${String(order).padStart(2, "0")}`,
-    packId: "custom",
+    id,
+    packId,
     order,
-    titleKey: `level.custom.${String(order).padStart(2, "0")}`,
+    titleKey: nextTitleKey(packId, order),
     rows: 5,
     cols: 5,
     maxSeeds: 5,
-    free: true,
+    free: state.level.free,
     stars: { three: 5, two: null, one: null },
     holes: [],
     requiredSeeds: [],
     blockedSeeds: []
   };
 
-  state.levels.push(level);
-  state.levelIndex = state.levels.length - 1;
+  state.levels.splice(insertIndex, 0, level);
+  renumberOrders();
+  state.levelIndex = insertIndex;
   state.level = level;
   resetToRequiredSeeds();
   clearRunState();
@@ -633,6 +650,120 @@ function createLevel(): void {
   saveCurrentLevel();
   exportJson();
   render();
+}
+
+function duplicateLevel(): void {
+  saveCurrentLevel();
+  const source = state.level;
+  const level: Level = {
+    ...structuredClone(source),
+    id: nextLevelId(source.packId),
+    order: source.order + 1,
+    titleKey: nextTitleKey(source.packId, nextOrderInPack(source.packId))
+  };
+  const insertIndex = state.levelIndex + 1;
+
+  state.levels.splice(insertIndex, 0, level);
+  renumberOrders();
+  state.levelIndex = insertIndex;
+  state.level = level;
+  resetToRequiredSeeds();
+  clearRunState();
+  state.isSpreading = false;
+  state.messageKey = "editorHelp";
+  saveCurrentLevel();
+  exportJson();
+  render();
+}
+
+function reorderLevels(): void {
+  saveCurrentLevel();
+  const currentId = state.level.id;
+  const packs = uniquePackIds();
+  const levels = packs.flatMap((packId) => {
+    const packLevels = state.levels
+      .filter((level) => level.packId === packId)
+      .sort((a, b) => a.order - b.order);
+
+    return packLevels.map((level, index) => {
+      const orderInPack = index + 1;
+      return {
+        ...level,
+        id: `${packId}-${String(orderInPack).padStart(2, "0")}`,
+        order: 0,
+        titleKey: nextTitleKey(packId, orderInPack)
+      };
+    });
+  });
+
+  state.levels = levels;
+  renumberOrders();
+  state.levelIndex = Math.max(0, state.levels.findIndex((level) => level.id === currentId));
+  state.level = state.levels[state.levelIndex];
+  saveCurrentLevel();
+  exportJson();
+  render();
+}
+
+async function saveCurrentPackToFirestore(status: LevelPackStatus): Promise<void> {
+  saveCurrentLevel();
+
+  try {
+    const { saveLevelPackToFirestore } = await import("./editorFirestore");
+    await saveLevelPackToFirestore(buildCurrentPack(status), status);
+    state.messageKey = status === "published" ? "publishSucceeded" : "draftSaved";
+  } catch {
+    state.messageKey = "firestoreSaveFailed";
+  }
+
+  render();
+}
+
+function buildCurrentPack(status: LevelPackStatus): LevelPack {
+  const packId = state.level.packId || "custom";
+  const levels = state.levels
+    .filter((level) => level.packId === packId)
+    .sort((a, b) => a.order - b.order);
+  const hasPaidLevel = levels.some((level) => !level.free);
+
+  return {
+    id: packId,
+    order: uniquePackIds().indexOf(packId) + 1,
+    titleKey: `pack.${packId.replaceAll("-", "")}`,
+    access: hasPaidLevel ? "paid" : "free",
+    status,
+    publishedAt: status === "published" ? new Date().toISOString() : null,
+    purchaseId: hasPaidLevel ? "unlock_full_game" : undefined,
+    levels
+  };
+}
+
+function lastIndexInPack(packId: string): number {
+  const index = state.levels.map((level) => level.packId).lastIndexOf(packId);
+  return index >= 0 ? index : state.levels.length - 1;
+}
+
+function nextOrderInPack(packId: string): number {
+  const count = state.levels.filter((level) => level.packId === packId).length;
+  return count + 1;
+}
+
+function nextLevelId(packId: string): string {
+  return `${packId}-${String(nextOrderInPack(packId)).padStart(2, "0")}`;
+}
+
+function nextTitleKey(packId: string, order: number): string {
+  return `level.${packId.replaceAll("-", "")}.${String(order).padStart(2, "0")}`;
+}
+
+function uniquePackIds(): string[] {
+  return [...new Set(state.levels.map((level) => level.packId))];
+}
+
+function renumberOrders(): void {
+  state.levels.forEach((level, index) => {
+    level.order = index + 1;
+  });
 }
 
 function syncRequiredSeeds(): void {

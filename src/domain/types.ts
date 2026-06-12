@@ -25,6 +25,22 @@ export interface Level {
   blockedSeeds: CellCoord[];
 }
 
+export type LevelPackAccess = "free" | "paid" | "conditional";
+export type LevelPackStatus = "draft" | "published";
+
+export interface LevelPack {
+  id: string;
+  order: number;
+  titleKey: string;
+  access: LevelPackAccess;
+  status?: LevelPackStatus;
+  updatedAt?: string;
+  publishedAt?: string | null;
+  purchaseId?: string;
+  unlockAfterPackId?: string;
+  levels: Level[];
+}
+
 export interface LevelResult {
   completed: boolean;
   infected: Set<string>;

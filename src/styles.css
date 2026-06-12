@@ -360,11 +360,16 @@ h2 {
 }
 
 .level-nav,
+.editor-actions,
 .tool-grid,
 .json-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+}
+
+.editor-actions {
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .level-nav {
@@ -567,6 +572,10 @@ h2 {
   }
 
   .bottom-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-actions {
     grid-template-columns: 1fr;
   }
 
