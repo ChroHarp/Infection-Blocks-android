@@ -149,6 +149,7 @@ h2 {
 }
 
 .summary-band span,
+.package-header span,
 .level-card-meta,
 .level-card-main span,
 .play-status span,
@@ -166,14 +167,49 @@ h2 {
 
 .level-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
   gap: 10px;
+}
+
+.package-list {
+  display: grid;
+  gap: 14px;
+}
+
+.package-section {
+  display: grid;
+  gap: 10px;
+}
+
+.package-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.package-header strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 1.2rem;
+}
+
+.package-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
 .level-card {
   display: grid;
+  grid-template-rows: auto auto 1fr;
   gap: 12px;
-  min-height: 178px;
+  height: 248px;
   padding: 12px;
   text-align: left;
   background: rgba(16, 35, 30, 0.9);
@@ -207,6 +243,9 @@ h2 {
 .level-card-main strong {
   display: block;
   margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .level-card-meta {
@@ -234,11 +273,20 @@ h2 {
   background: var(--blue);
 }
 
+.mini-board-frame {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 132px;
+  min-height: 132px;
+  overflow: hidden;
+}
+
 .mini-board {
   display: grid;
-  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-columns: repeat(var(--cols), var(--mini-cell));
+  grid-auto-rows: var(--mini-cell);
   gap: 2px;
-  width: min(100%, 150px);
   padding: 6px;
   border-radius: 8px;
   background: #0a1814;
@@ -512,7 +560,7 @@ h2 {
   }
 
   .level-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(164px, 1fr));
   }
 
   .editor-layout {
@@ -541,6 +589,28 @@ h2 {
 
   .bottom-actions {
     grid-template-columns: 1fr;
+  }
+
+  .package-header,
+  .package-meta {
+    align-items: start;
+  }
+
+  .package-header {
+    display: grid;
+  }
+
+  .package-meta {
+    justify-content: start;
+    flex-wrap: wrap;
+  }
+
+  .level-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .level-card {
+    height: 232px;
   }
 
   .editor-actions {

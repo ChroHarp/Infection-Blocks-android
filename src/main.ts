@@ -110,6 +110,7 @@ function renderDevNav(): string {
 function renderLevelSelect(): string {
   const completed = state.levels.filter((level) => state.progress[level.id]?.completed).length;
   const totalStars = state.levels.reduce((sum, level) => sum + (state.progress[level.id]?.bestStars ?? 0), 0);
+  const packs = groupedLevels();
 
   return `
     <section class="level-screen">
@@ -124,8 +125,33 @@ function renderLevelSelect(): string {
         </div>
       </div>
 
+      <div class="package-list">
+        ${packs.map((pack) => renderPackageSection(pack)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderPackageSection(pack: LevelPack): string {
+  const completed = pack.levels.filter((level) => state.progress[level.id]?.completed).length;
+  const totalStars = pack.levels.reduce((sum, level) => sum + (state.progress[level.id]?.bestStars ?? 0), 0);
+  const paid = pack.levels.some((level) => !level.free);
+
+  return `
+    <section class="package-section">
+      <header class="package-header">
+        <div>
+          <span>${t(state.locale, "package")}</span>
+          <strong>${pack.id}</strong>
+        </div>
+        <div class="package-meta">
+          <span class="pill ${paid ? "paid" : "free"}">${t(state.locale, paid ? "paidLevel" : "freeLevel")}</span>
+          <span>${completed} / ${pack.levels.length}</span>
+          <span>${starText(totalStars, pack.levels.length * 3)}</span>
+        </div>
+      </header>
       <div class="level-list">
-        ${state.levels.map((level, index) => renderLevelCard(level, index)).join("")}
+        ${pack.levels.map((level) => renderLevelCard(level, state.levels.findIndex((candidate) => candidate.id === level.id))).join("")}
       </div>
     </section>
   `;
@@ -150,13 +176,17 @@ function renderLevelCard(level: Level, index: number): string {
         <span class="pill ${level.free ? "free" : "paid"}">${t(state.locale, level.free ? "freeLevel" : "paidLevel")}</span>
         <span>${unlocked ? label : t(state.locale, "locked")}</span>
       </div>
-      ${renderMiniBoard(level)}
+      <div class="mini-board-frame">
+        ${renderMiniBoard(level)}
+      </div>
     </button>
   `;
 }
 
 function renderMiniBoard(level: Level): string {
   const cells: string[] = [];
+  const maxDimension = Math.max(level.rows, level.cols);
+  const miniCellSize = Math.max(7, Math.floor((112 - (maxDimension - 1) * 2) / maxDimension));
 
   for (let row = 0; row < level.rows; row += 1) {
     for (let col = 0; col < level.cols; col += 1) {
@@ -164,7 +194,27 @@ function renderMiniBoard(level: Level): string {
     }
   }
 
-  return `<div class="mini-board" style="--rows:${level.rows};--cols:${level.cols}">${cells.join("")}</div>`;
+  return `<div class="mini-board" style="--rows:${level.rows};--cols:${level.cols};--mini-cell:${miniCellSize}px">${cells.join("")}</div>`;
+}
+
+function groupedLevels(): LevelPack[] {
+  const packIds = uniquePackIds();
+
+  return packIds.map((packId, index) => {
+    const levels = state.levels
+      .filter((level) => level.packId === packId)
+      .sort((a, b) => a.order - b.order);
+    const paid = levels.some((level) => !level.free);
+
+    return {
+      id: packId,
+      order: index + 1,
+      titleKey: `pack.${packId.replaceAll("-", "")}`,
+      access: paid ? "paid" : "free",
+      purchaseId: paid ? "unlock_full_game" : undefined,
+      levels
+    };
+  });
 }
 
 function renderPlayScreen(): string {
