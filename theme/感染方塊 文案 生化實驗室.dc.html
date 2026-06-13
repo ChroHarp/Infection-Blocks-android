@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(130% 90% at 50% -10%,#11302591 0%,#0a1714 50%,#070d0b 100%),#070d0b;font-family:'Space Grotesk','Noto Sans TC',system-ui,sans-serif;color:#eafff2;padding:52px 40px 90px;">
+  <div style="max-width:1080px;margin:0 auto;">
+
+    <!-- Header -->
+    <div style="margin-bottom:40px;">
+      <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.24em;color:#5ef38a;font-family:'Space Mono',monospace;">BIOLAB · 生化實驗室</p>
+      <h1 style="margin:0;font-size:38px;font-weight:700;color:#eafff2;letter-spacing:-0.01em;">文案總表</h1>
+      <p style="margin:12px 0 0;font-size:14px;color:#93b6a6;line-height:1.65;max-width:660px;">把整套介面語氣定調為 <strong style="color:#5ef38a;">冷靜、精準、專業的實驗室操作介面</strong>——你是控制這場培養與擴散的研究員，不是受害者。保留「感染／擴散」核心字眼，外層包裝成儀器、批次、檢體的實驗術語。每條都附 i18n key 與英文，可直接填回 <code style="background:rgba(94,243,138,0.12);padding:2px 6px;border-radius:5px;font-size:13px;color:#5ef38a;font-family:'Space Mono',monospace;">src/i18n.ts</code>。</p>
+    </div>
+
+    <!-- Voice principles -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:36px;">
+      <sc-for list="{{ principles }}" as="p" hint-placeholder-count="3">
+        <div style="background:#10241d;border:1px solid rgba(120,200,160,0.16);border-radius:16px;padding:20px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;font-family:'Space Mono',monospace;margin-bottom:10px;">{{ p.tag }}</div>
+          <div style="font-size:15px;font-weight:700;color:#eafff2;margin-bottom:6px;">{{ p.title }}</div>
+          <div style="font-size:12.5px;color:#93b6a6;line-height:1.6;">{{ p.body }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- Naming pivot -->
+    <div style="background:#10241d;border:1px solid rgba(120,200,160,0.16);border-radius:20px;padding:26px 28px;margin-bottom:36px;">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 18px;font-family:'Space Mono',monospace;">用語對照 · 升級為實驗室術語</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;">
+        <sc-for list="{{ termPivot }}" as="t" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+            <span style="flex:0 0 auto;padding:5px 10px;border-radius:7px;background:rgba(255,255,255,0.05);color:#6e827a;text-decoration:line-through;font-family:'Space Mono',monospace;font-size:12px;">{{ t.old }}</span>
+            <span style="color:#5ef38a;font-weight:700;">→</span>
+            <span style="flex:1;padding:5px 10px;border-radius:7px;background:rgba(94,243,138,0.12);color:#9df0b8;font-weight:700;">{{ t.new }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Copy tables by section -->
+    <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="8">
+      <div style="margin-bottom:30px;">
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
+          <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0;font-family:'Space Mono',monospace;">{{ sec.num }} · {{ sec.title }}</h2>
+          <span style="font-size:12px;color:#6e827a;font-family:'Space Mono',monospace;">{{ sec.subtitle }}</span>
+        </div>
+        <div style="background:#10241d;border:1px solid rgba(120,200,160,0.16);border-radius:16px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:200px 1.4fr 1fr;gap:0;padding:11px 20px;background:rgba(255,255,255,0.03);font-size:11px;font-weight:700;letter-spacing:0.06em;color:#93b6a6;font-family:'Space Mono',monospace;">
+            <div>i18n KEY</div><div>中文（生化實驗室）</div><div>ENGLISH</div>
+          </div>
+          <sc-for list="{{ sec.rows }}" as="r" hint-placeholder-count="5">
+            <div style="{{ r.rowStyle }}">
+              <div style="font-family:'Space Mono',monospace;font-size:11.5px;color:#6a8478;align-self:center;">{{ r.key }}</div>
+              <div style="font-size:13.5px;color:#eafff2;font-weight:500;align-self:center;padding-right:14px;line-height:1.5;">{{ r.zh }}</div>
+              <div style="font-size:12.5px;color:#93b6a6;align-self:center;line-height:1.5;">{{ r.en }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+
+    <!-- Microcopy showcase -->
+    <div style="margin-top:8px;background:#10241d;border:1px solid rgba(120,200,160,0.16);border-radius:20px;padding:28px;">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 8px;font-family:'Space Mono',monospace;">情境示意 · 結算回報</h2>
+      <p style="font-size:12.5px;color:#93b6a6;margin:0 0 20px;">星等對應不同效率評語，語氣維持儀器回報的中性肯定，不貶低低星表現。</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <sc-for list="{{ resultCards }}" as="c" hint-placeholder-count="3">
+          <div style="border-radius:16px;padding:24px 18px;text-align:center;background:radial-gradient(120% 80% at 50% 0%,rgba(94,243,138,0.12),transparent 50%),#0e221c;border:1px solid rgba(94,243,138,0.22);">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;font-family:'Space Mono',monospace;margin-bottom:10px;">感染完成 100%</div>
+            <div style="font-size:24px;letter-spacing:4px;margin-bottom:10px;color:#ffd166;text-shadow:0 0 16px rgba(255,209,102,0.45);">{{ c.stars }}</div>
+            <div style="font-size:17px;font-weight:700;color:#eafff2;margin-bottom:6px;">{{ c.title }}</div>
+            <div style="font-size:12.5px;color:#93b6a6;line-height:1.55;">{{ c.body }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    const principles = [
+      { tag: "TONE_01", title: "操作員視角", body: "玩家是掌控培養與擴散的研究員。用「接種、引爆、圍堵」等主動詞，傳達控制感，而非受困於疫情。" },
+      { tag: "TONE_02", title: "精準克制", body: "短句、儀器化。數字、單位、批次編號一律等寬字呈現。少用驚嘆號，肯定靠數據（效率、最佳紀錄）說話。" },
+      { tag: "TONE_03", title: "專業低風險", body: "保留原作「感染／擴散」核心字眼，僅在外層加上實驗室語境。受眾熟悉、改動最小、與現有架構無縫銜接。" },
+    ];
+
+    const termPivot = [
+      { old: "開始", new: "接種 / 啟動擴散" },
+      { old: "感染源", new: "菌株 / 檢體" },
+      { old: "病毒區", new: "培養皿 · 實驗室" },
+      { old: "關卡", new: "批次 / 樣本編號" },
+      { old: "通關成功", new: "感染完成 · 達標" },
+      { old: "禁放格", new: "防護隔離格" },
+      { old: "必放格", new: "指定接種點" },
+      { old: "感染失敗", new: "培養未達標" },
+    ];
+
+    const rowA = "display:grid;grid-template-columns:200px 1.4fr 1fr;gap:0;padding:13px 20px;border-top:1px solid rgba(120,200,160,0.1);";
+    const rowB = rowA + "background:rgba(255,255,255,0.02);";
+    const mkRows = (arr) => arr.map((r, i) => ({ ...r, rowStyle: i % 2 ? rowB : rowA }));
+
+    const sections = [
+      {
+        num: "01", title: "App 名稱 & 商店", subtitle: "STORE LISTING",
+        rows: mkRows([
+          { key: "app.name", zh: "感染方塊", en: "Infection Blocks" },
+          { key: "app.tagline", zh: "用最少菌株，引爆整盤連鎖感染", en: "Fewer strains. Total infection." },
+          { key: "store.subtitle", zh: "極簡感染擴散邏輯解謎", en: "A minimalist infection-spread puzzle" },
+          { key: "store.desc.line1", zh: "在培養皿格盤上接種幾顆菌株，啟動連鎖擴散，直到整盤淪陷。", en: "Inoculate a few strains, trigger the chain, and watch the dish fall." },
+          { key: "store.desc.line2", zh: "感染源用得越少，效率星等越高。隨手開局，慢慢推演。", en: "Fewer sources, higher efficiency rating. Pick up and solve anytime." },
+        ])
+      },
+      {
+        num: "02", title: "主選單 & 關卡選擇", subtitle: "HOME & LEVEL SELECT",
+        rows: mkRows([
+          { key: "menu.play", zh: "進入實驗", en: "Enter Lab" },
+          { key: "menu.continue", zh: "繼續批次", en: "Resume Batch" },
+          { key: "pack.free", zh: "病毒區 · 實驗室", en: "Containment Zone" },
+          { key: "pack.paid", zh: "P4 高階培養區", en: "P4 Culture Lab" },
+          { key: "levels.progress", zh: "已完成 {done} / {total} 批次", en: "{done} / {total} batches cleared" },
+          { key: "levels.stars", zh: "效率星等 {n} 顆", en: "{n} efficiency stars" },
+          { key: "level.locked", zh: "完成前一批次後解鎖", en: "Clear the previous batch to unlock" },
+        ])
+      },
+      {
+        num: "03", title: "遊玩畫面", subtitle: "IN-GAME HUD",
+        rows: mkRows([
+          { key: "play.levelLabel", zh: "LEVEL {n} · 批次", en: "Batch {n}" },
+          { key: "play.seeds", zh: "感染源", en: "Sources" },
+          { key: "play.target", zh: "三星目標", en: "3★ target" },
+          { key: "play.targetHint", zh: "≤ {n} 株", en: "≤ {n} strains" },
+          { key: "play.hintEmpty", zh: "點任一培養孔接種菌株，用得越少越精準。", en: "Tap a well to inoculate a strain — fewer is sharper." },
+          { key: "play.hintRule", zh: "被兩側鄰格包夾的格子會自行感染，連鎖擴散。", en: "A cell flanked by two infected neighbours falls, chaining onward." },
+          { key: "play.hintMax", zh: "菌株已達上限，先移除一株再調整佈點。", en: "Source limit reached — remove one to reposition." },
+          { key: "play.growing", zh: "感染擴散中⋯", en: "Spreading…" },
+        ])
+      },
+      {
+        num: "04", title: "按鈕", subtitle: "BUTTONS",
+        rows: mkRows([
+          { key: "btn.start", zh: "啟動感染", en: "Start Infection" },
+          { key: "btn.undo", zh: "復原", en: "Undo" },
+          { key: "btn.reset", zh: "重置批次", en: "Reset" },
+          { key: "btn.next", zh: "下一批次", en: "Next Batch" },
+          { key: "btn.retry", zh: "重新培養", en: "Retry" },
+          { key: "btn.back", zh: "返回", en: "Back" },
+        ])
+      },
+      {
+        num: "05", title: "通關結算", subtitle: "VICTORY",
+        rows: mkRows([
+          { key: "win.eyebrow", zh: "感染完成 100%", en: "Infection complete · 100%" },
+          { key: "win.title", zh: "通關成功", en: "Level Cleared" },
+          { key: "win.seedsUsed", zh: "使用 {n} 感染源", en: "Infected from {n} sources" },
+          { key: "win.record", zh: "· 刷新最佳", en: "· New best" },
+          { key: "win.star3", zh: "完美佈點，效率滿分", en: "Optimal placement — peak efficiency" },
+          { key: "win.star2", zh: "達標，仍有精簡空間", en: "Cleared. Room to trim a source" },
+          { key: "win.star1", zh: "全盤感染完成，先收下成果", en: "Full infection achieved — take the clear" },
+        ])
+      },
+      {
+        num: "06", title: "未達標", subtitle: "NOT-YET STATES",
+        rows: mkRows([
+          { key: "fail.title", zh: "培養未達標", en: "Batch incomplete" },
+          { key: "fail.incomplete", zh: "仍有格子未感染，讓菌株「包夾」更多空格。", en: "Some cells stayed clean — flank more of them." },
+          { key: "fail.tooMany", zh: "感染源超過本關上限，試試更少幾株。", en: "Over the source limit — try with fewer." },
+          { key: "fail.missingSeed", zh: "藍色指定接種點尚未佈置。", en: "A required blue source is missing." },
+          { key: "fail.blocked", zh: "紅色防護隔離格不可作為起始菌株。", en: "Protected red cells can't be a starting source." },
+        ])
+      },
+      {
+        num: "07", title: "新手引導", subtitle: "ONBOARDING · 3 STEPS",
+        rows: mkRows([
+          { key: "tut.1.title", zh: "接種菌株", en: "Inoculate" },
+          { key: "tut.1.body", zh: "點空的培養孔放下一顆菌株，作為擴散起點。", en: "Tap an empty well to place a strain — your starting point." },
+          { key: "tut.2.title", zh: "啟動擴散", en: "Trigger spread" },
+          { key: "tut.2.body", zh: "被兩個已感染鄰格包夾的格子會自行淪陷，連鎖下去。", en: "A cell flanked by two infected neighbours falls, chaining onward." },
+          { key: "tut.3.title", zh: "越少越強", en: "Fewer is sharper" },
+          { key: "tut.3.body", zh: "用最少菌株讓整盤感染完成，即可拿下三星效率。", en: "Infect the whole dish with the fewest strains for 3 stars." },
+          { key: "tut.skip", zh: "略過", en: "Skip" },
+        ])
+      },
+      {
+        num: "08", title: "設定 & 系統", subtitle: "SETTINGS & SYSTEM",
+        rows: mkRows([
+          { key: "settings.title", zh: "設定", en: "Settings" },
+          { key: "settings.sound", zh: "音效", en: "Sound" },
+          { key: "settings.haptics", zh: "震動回饋", en: "Haptics" },
+          { key: "settings.language", zh: "語言", en: "Language" },
+          { key: "settings.resetProgress", zh: "清空實驗紀錄", en: "Reset progress" },
+          { key: "settings.resetConfirm", zh: "確定清空所有實驗紀錄？此操作無法復原。", en: "Clear all progress? This can't be undone." },
+          { key: "sys.offline", zh: "離線可運作，紀錄保存於本機裝置。", en: "Works offline — progress stays on this device." },
+        ])
+      },
+    ];
+
+    const resultCards = [
+      { stars: "★★★", title: "通關成功", body: "完美佈點，效率滿分。" },
+      { stars: "★★☆", title: "通關成功", body: "達標，仍有精簡空間。" },
+      { stars: "★☆☆", title: "通關成功", body: "全盤感染完成，先收下成果。" },
+    ];
+
+    return { principles, termPivot, sections, resultCards };
+  }
+}
+</script>
+</body>
+</html>

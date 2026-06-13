@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; }
+@keyframes bioPulse { 0%,100% { filter:brightness(1); } 50% { filter:brightness(1.4); } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(130% 90% at 50% -10%,#11302591 0%,#0a1714 50%,#070d0b 100%),#070d0b;font-family:'Space Grotesk','Noto Sans TC',system-ui,sans-serif;color:#eafff2;padding:52px 40px 90px;">
+  <div style="max-width:1100px;margin:0 auto;">
+
+    <!-- Header -->
+    <div style="margin-bottom:44px;">
+      <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.24em;color:#5ef38a;font-family:'Space Mono',monospace;">BIOLAB · 生化實驗室</p>
+      <h1 style="margin:0;font-size:38px;font-weight:700;color:#eafff2;letter-spacing:-0.01em;">styles.css 替換清單</h1>
+      <p style="margin:12px 0 0;font-size:14px;color:#93b6a6;line-height:1.65;max-width:620px;">沿用現有深綠基調，全面提質為近黑玻璃介面 ＋ 螢光菌綠強調。下列所有值對應你的 <code style="background:rgba(94,243,138,0.12);padding:2px 6px;border-radius:5px;font-size:13px;color:#5ef38a;font-family:'Space Mono',monospace;">src/styles.css</code>，class 名稱與 HTML 結構全部不變，只換視覺值。BEFORE 欄為現行「柔光培養皿」亮色，AFTER 欄為本方案。</p>
+    </div>
+
+    <!-- 01 CSS Variables -->
+    <div style="margin-bottom:40px;">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 14px;font-family:'Space Mono',monospace;">01 · CSS 變數（:root 替換）</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+        <div style="border-radius:16px;overflow:hidden;border:1px solid #e4e8e5;">
+          <div style="padding:10px 16px;background:#eef2ef;font-size:11px;font-weight:700;letter-spacing:0.1em;color:#6e827a;font-family:'Space Mono',monospace;">BEFORE · 柔光培養皿（亮）</div>
+          <pre style="margin:0;padding:18px;background:#f7faf7;color:#33423a;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.75;overflow:auto;">:root {
+  --bg:           #edf3ed;
+  --surface:      #ffffff;
+  --surface-soft: #f0f5f0;
+  --line:    rgba(80,140,100,0.14);
+  --text:         #1a261f;
+  --muted:        #6e827a;
+  --accent:       #2bb673;
+  --blue:         #4c9aff;
+  --danger:       #ff5d6c;
+  --warning:      #ff9f1c;
+  --cell:         #e3ebe4;
+  font-family: "Fredoka", …
+}</pre>
+        </div>
+        <div style="border-radius:16px;overflow:hidden;border:1px solid rgba(94,243,138,0.3);box-shadow:0 8px 30px rgba(94,243,138,0.08);">
+          <div style="padding:10px 16px;background:rgba(94,243,138,0.12);font-size:11px;font-weight:700;letter-spacing:0.1em;color:#5ef38a;font-family:'Space Mono',monospace;">AFTER · 生化實驗室（深）</div>
+          <pre style="margin:0;padding:18px;background:#06120e;color:#9df0b8;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.75;overflow:auto;">:root {
+  --bg:           #081210;
+  --surface:      #10241d;
+  --surface-soft: #16322a;
+  --line:    rgba(120,200,160,0.16);
+  --text:         #eafff2;
+  --muted:        #93b6a6;
+  --accent:       #5ef38a;
+  --blue:         #4ea8ff;
+  --danger:       #ff6b6b;
+  --warning:      #ffd166;
+  --cell:         #e7f1ea;
+  font-family: "Space Grotesk", …
+}</pre>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;">
+        <sc-for list="{{ colorChips }}" as="chip" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#10241d;border-radius:12px;border:1px solid rgba(120,200,160,0.16);">
+            <div style="{{ chip.swatch }}"></div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#eafff2;font-family:'Space Mono',monospace;">{{ chip.varName }}</div>
+              <div style="font-size:11px;color:#93b6a6;font-family:'Space Mono',monospace;">{{ chip.hex }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- 02 Typography -->
+    <div style="margin-bottom:40px;padding:28px;background:#10241d;border-radius:20px;border:1px solid rgba(120,200,160,0.16);">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 20px;font-family:'Space Mono',monospace;">02 · 字型（Google Fonts 替換）</h2>
+      <div style="display:grid;gap:14px;">
+        <div style="background:#0a1a15;border-radius:12px;padding:16px;border:1px solid rgba(120,200,160,0.1);">
+          <div style="font-size:11px;font-weight:700;color:#93b6a6;margin-bottom:8px;font-family:'Space Mono',monospace;">index.html &lt;head&gt; 加入</div>
+          <pre style="margin:0;font-family:'Space Mono',monospace;font-size:12px;line-height:1.6;color:#9df0b8;white-space:pre-wrap;">&lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;
+&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;
+&lt;link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet"&gt;</pre>
+        </div>
+        <div style="background:#0a1a15;border-radius:12px;padding:16px;border:1px solid rgba(120,200,160,0.1);">
+          <div style="font-size:11px;font-weight:700;color:#93b6a6;margin-bottom:8px;font-family:'Space Mono',monospace;">:root 內 font-family 改為</div>
+          <pre style="margin:0;font-family:'Space Mono',monospace;font-size:12px;color:#9df0b8;">font-family: "Space Grotesk", "Noto Sans TC", "Noto Sans JP", system-ui, sans-serif;</pre>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+          <div style="padding:16px;background:#0a1a15;border-radius:12px;border:1px solid rgba(120,200,160,0.1);">
+            <div style="font-size:11px;font-weight:700;color:#93b6a6;margin-bottom:10px;font-family:'Space Mono',monospace;">Space Grotesk — 標題 / 遊戲 UI</div>
+            <div style="font-family:'Space Grotesk',sans-serif;">
+              <div style="font-size:28px;font-weight:700;color:#eafff2;line-height:1.1;">感染方塊</div>
+              <div style="font-size:20px;font-weight:700;color:#5ef38a;margin-top:4px;">通關成功</div>
+              <div style="font-size:15px;font-weight:500;color:#93b6a6;margin-top:4px;">LEVEL 03 · 病毒區</div>
+            </div>
+          </div>
+          <div style="padding:16px;background:#0a1a15;border-radius:12px;border:1px solid rgba(120,200,160,0.1);">
+            <div style="font-size:11px;font-weight:700;color:#93b6a6;margin-bottom:10px;font-family:'Space Mono',monospace;">Space Mono — 數字 / 標籤 / 代碼</div>
+            <div style="font-family:'Space Mono',monospace;">
+              <div style="font-size:22px;font-weight:700;color:#eafff2;line-height:1.2;">4 / 6 · 60%</div>
+              <div style="font-size:13px;font-weight:700;color:#5ef38a;margin-top:8px;letter-spacing:0.14em;">PACKAGE 01</div>
+              <div style="font-size:12px;font-weight:400;color:#93b6a6;margin-top:4px;">SOURCES · ≤ 5</div>
+            </div>
+          </div>
+        </div>
+        <p style="margin:2px 0 0;font-size:12px;color:#93b6a6;line-height:1.6;">Space Grotesk 走標題與內文；所有<strong style="color:#eafff2;">數字、進度、星等、代碼標籤</strong>一律改用 Space Mono，是本方案「實驗室儀表」感的關鍵。</p>
+      </div>
+    </div>
+
+    <!-- 03 Radius & Shadow -->
+    <div style="margin-bottom:40px;padding:28px;background:#10241d;border-radius:20px;border:1px solid rgba(120,200,160,0.16);">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 20px;font-family:'Space Mono',monospace;">03 · 圓角 &amp; 陰影 / 輝光</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
+        <sc-for list="{{ radiusCards }}" as="r" hint-placeholder-count="5">
+          <div style="padding:16px;background:#0a1a15;border-radius:12px;border:1px solid rgba(120,200,160,0.1);">
+            <div style="{{ r.demo }}"></div>
+            <div style="margin-top:10px;font-size:12px;font-weight:700;color:#eafff2;font-family:'Space Mono',monospace;">{{ r.name }}</div>
+            <div style="font-size:11px;color:#93b6a6;margin-top:2px;">{{ r.usage }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:14px;background:#06120e;border-radius:12px;padding:16px;border:1px solid rgba(120,200,160,0.1);">
+        <div style="font-size:11px;font-weight:700;color:#93b6a6;margin-bottom:8px;font-family:'Space Mono',monospace;">styles.css 變數（:root 末尾，圓角沿用、陰影換深色）</div>
+        <pre style="margin:0;font-family:'Space Mono',monospace;font-size:12px;line-height:1.8;color:#9df0b8;">  --radius-sm:   8px;   /* button, input, cell */
+  --radius-md:  14px;   /* metrics card, panel */
+  --radius-lg:  18px;   /* level card, modal */
+  --radius-xl:  24px;   /* result dialog */
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.30);
+  --shadow-md:  0 8px 22px rgba(0,0,0,0.40);
+  --shadow-lg:  0 24px 60px rgba(0,0,0,0.50);
+  --glow:       0 0 16px rgba(94,243,138,0.45);  /* 新增：菌綠輝光 */</pre>
+      </div>
+    </div>
+
+    <!-- 04 Key class diffs -->
+    <div style="margin-bottom:40px;">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 14px;font-family:'Space Mono',monospace;">04 · 核心 Class 差異（逐行 diff）</h2>
+      <div style="display:grid;gap:12px;">
+        <sc-for list="{{ diffs }}" as="d" hint-placeholder-count="8">
+          <div style="border-radius:16px;overflow:hidden;border:1px solid rgba(120,200,160,0.16);">
+            <div style="padding:10px 18px;background:#0a1a15;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#eafff2;">{{ d.selector }}</span>
+              <span style="font-size:11px;font-weight:700;color:#93b6a6;">{{ d.note }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;">
+              <pre style="margin:0;padding:14px 18px;background:#f7faf7;color:#33423a;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;border-right:1px solid #dfe5e0;overflow:auto;">{{ d.before }}</pre>
+              <pre style="margin:0;padding:14px 18px;background:#06120e;color:#9df0b8;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;overflow:auto;">{{ d.after }}</pre>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- 05 Cell states -->
+    <div style="margin-bottom:40px;padding:28px;background:#10241d;border-radius:20px;border:1px solid rgba(120,200,160,0.16);">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 20px;font-family:'Space Mono',monospace;">05 · 格子狀態（.cell 各 modifier）</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;padding:18px;border-radius:14px;background:#0a1a15;border:1px solid rgba(120,200,160,0.12);">
+        <sc-for list="{{ cellStates }}" as="cs" hint-placeholder-count="7">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div style="{{ cs.demo }}"><sc-if value="{{ cs.dot }}" hint-placeholder-val="{{ true }}"><div style="{{ cs.dot }}"></div></sc-if></div>
+            <div style="font-size:11px;font-weight:700;color:#eafff2;font-family:'Space Mono',monospace;">{{ cs.name }}</div>
+            <div style="font-size:10px;color:#93b6a6;text-align:center;max-width:88px;">{{ cs.desc }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background:#06120e;border-radius:12px;padding:16px;border:1px solid rgba(120,200,160,0.1);">
+        <div style="font-size:11px;font-weight:700;color:#93b6a6;margin-bottom:10px;font-family:'Space Mono',monospace;">替換 .cell 及其 modifier 樣式</div>
+        <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.75;color:#9df0b8;white-space:pre-wrap;">/* 空格 — 培養皿孔，淺底浮在深盤上 */
+.cell {
+  border-radius: 8px;
+  background: var(--cell);              /* #e7f1ea */
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6),
+              inset 0 -2px 4px rgba(20,50,40,0.12);
+}
+/* 玩家放置的感染源（菌株） */
+.cell.selected {
+  background: #0c1f18;
+  box-shadow: 0 0 0 2px rgba(94,243,138,0.85),
+              0 0 14px rgba(94,243,138,0.45);
+}
+.cell.selected::after {
+  inset: 27%;
+  background: #5ef38a;
+  box-shadow: 0 0 12px rgba(94,243,138,1);
+}
+/* 感染波（當前擴散） */
+.cell.spreading {
+  background: #0f2a20;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px rgba(94,243,138,0.9),
+              0 0 16px rgba(94,243,138,0.55);
+  animation: bioPulse 1.6s ease-in-out infinite;
+}
+/* 已感染 */
+.cell.infected {
+  background: #10241d;
+  box-shadow: 0 0 0 1px rgba(94,243,138,0.35),
+              0 0 12px rgba(94,243,138,0.22);
+}
+.cell.infected::after {
+  background: #5ef38a;
+  box-shadow: 0 0 9px rgba(94,243,138,0.9);
+}
+/* 必放源（藍） */
+.cell.requiredSeed {
+  background: #dfeeff;
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 2px var(--blue),
+              0 0 10px rgba(78,168,255,0.4);
+}
+/* 禁放格（紅，斜紋警示） */
+.cell.play-blockedSeed {
+  background: #f3dede;
+  border: 2px solid var(--danger);
+  background-image: repeating-linear-gradient(
+    45deg, rgba(255,107,107,0.3) 0 4px, transparent 4px 8px);
+}
+/* 格盤容器 — 深玻璃培養盤 */
+.grid {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(120,200,160,0.14);
+  border-radius: 18px;
+  box-shadow: var(--shadow-md);
+}</pre>
+      </div>
+    </div>
+
+    <!-- 06 body / modal -->
+    <div style="margin-bottom:40px;padding:28px;background:#10241d;border-radius:20px;border:1px solid rgba(120,200,160,0.16);">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 16px;font-family:'Space Mono',monospace;">06 · body 背景 &amp; 結算彈窗</h2>
+      <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.8;color:#9df0b8;background:#06120e;border-radius:12px;padding:18px;white-space:pre-wrap;border:1px solid rgba(120,200,160,0.1);">/* body — 深綠培養皿輝光 */
+body {
+  background: radial-gradient(120% 80% at 50% -10%,
+              #13362b 0%, #0a1714 55%, #081210 100%);
+}
+
+/* 通關彈窗 .result-dialog */
+.result-dialog {
+  background:
+    radial-gradient(120% 80% at 50% 0%,
+      rgba(94,243,138,0.16), transparent 45%),
+    linear-gradient(180deg, #143027, #0e221c);
+  border: 1px solid rgba(94,243,138,0.25);
+  border-radius: var(--radius-xl);       /* 24px */
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+
+/* 結算星號色 */
+.result-stars { color: var(--warning); }      /* #ffd166 */
+.result-star  { text-shadow: 0 0 18px rgba(255,209,102,0.5); }
+
+/* 失敗彈窗 .failure-dialog */
+.failure-dialog {
+  background:
+    radial-gradient(120% 80% at 50% 0%,
+      rgba(255,107,107,0.14), transparent 45%),
+    linear-gradient(180deg, #2a1518, #1a0f11);
+  border-color: rgba(255,107,107,0.35);
+}
+
+/* 遮罩 .modal-backdrop */
+.modal-backdrop {
+  background: rgba(4,12,9,0.55);
+}</pre>
+    </div>
+
+    <!-- 07 button -->
+    <div style="margin-bottom:40px;padding:28px;background:#10241d;border-radius:20px;border:1px solid rgba(120,200,160,0.16);">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 20px;font-family:'Space Mono',monospace;">07 · 按鈕</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+        <sc-for list="{{ btnSamples }}" as="b" hint-placeholder-count="4">
+          <div style="{{ b.style }}">{{ b.label }}</div>
+        </sc-for>
+      </div>
+      <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.8;color:#9df0b8;background:#06120e;border-radius:12px;padding:18px;white-space:pre-wrap;border:1px solid rgba(120,200,160,0.1);">/* 預設按鈕 — 深玻璃 */
+button {
+  min-height: 46px;
+  border: 1px solid rgba(120,200,160,0.16);
+  border-radius: var(--radius-md);      /* 14px */
+  color: var(--text);
+  background: rgba(255,255,255,0.05);
+  box-shadow: var(--shadow-sm);
+}
+button:active { transform: translateY(1px); }
+
+/* 主動作 — 菌綠漸層＋輝光 */
+button.active, .primary-action {
+  border-color: var(--accent);
+  color: #06231a;
+  background: linear-gradient(180deg, #5ef38a, #33c96a);
+  box-shadow: 0 6px 16px rgba(94,243,138,0.3);
+}
+
+/* Ghost（復原 / 返回） */
+.ghost-button {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(120,200,160,0.16);
+}</pre>
+    </div>
+
+    <!-- 08 misc -->
+    <div style="padding:28px;background:#10241d;border-radius:20px;border:1px solid rgba(120,200,160,0.16);">
+      <h2 style="font-size:13px;font-weight:700;letter-spacing:0.16em;color:#5ef38a;margin:0 0 16px;font-family:'Space Mono',monospace;">08 · 其他細節</h2>
+      <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.8;color:#9df0b8;background:#06120e;border-radius:12px;padding:18px;white-space:pre-wrap;border:1px solid rgba(120,200,160,0.1);">/* 迷你盤面容器（關卡卡片預覽） */
+.mini-board {
+  background: rgba(0,0,0,0.25);
+  border-radius: 12px;
+}
+.mini-cell {
+  background: #d4e2d9;
+  border-radius: 4px;
+}
+.mini-cell.requiredSeed { background: #4ea8ff; }
+.mini-cell.blockedSeed  { background: #ff6b6b; }
+
+/* 關卡卡片 */
+.level-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(120,200,160,0.16);
+  border-radius: var(--radius-lg);      /* 18px */
+  box-shadow: var(--shadow-sm);
+}
+.level-card.locked { filter: grayscale(0.75) brightness(0.7); }
+
+/* 指標面板 */
+.play-metrics div {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(120,200,160,0.14);
+  border-radius: var(--radius-md);
+}
+.play-metrics strong { font-family: "Space Mono", monospace; }
+
+/* .eyebrow accent label（改菌綠＋等寬） */
+.eyebrow {
+  color: var(--accent);
+  font-family: "Space Mono", monospace;
+}
+
+/* .pill */
+.pill.free { background: var(--accent); color: #06231a; }
+.pill.paid { background: var(--blue);  color: #04121a; }
+
+/* 進度條 */
+.progress-fill {
+  background: linear-gradient(90deg, #33c96a, #5ef38a);
+}
+
+/* 星號顏色統一 */
+.status-stars, .stars { color: var(--warning); }   /* #ffd166 */</pre>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    const sw = (bg, extra) => "width:36px;height:36px;border-radius:10px;background:" + bg + ";" + (extra || "");
+    const colorChips = [
+      { varName: "--bg",      hex: "#081210", swatch: sw("#081210", "border:1px solid rgba(120,200,160,0.2);") },
+      { varName: "--surface", hex: "#10241d", swatch: sw("#10241d", "border:1px solid rgba(120,200,160,0.2);") },
+      { varName: "--text",    hex: "#eafff2", swatch: sw("#eafff2") },
+      { varName: "--muted",   hex: "#93b6a6", swatch: sw("#93b6a6") },
+      { varName: "--accent",  hex: "#5ef38a", swatch: sw("#5ef38a", "box-shadow:0 0 10px rgba(94,243,138,0.6);") },
+      { varName: "--blue",    hex: "#4ea8ff", swatch: sw("#4ea8ff") },
+      { varName: "--danger",  hex: "#ff6b6b", swatch: sw("#ff6b6b") },
+      { varName: "--warning", hex: "#ffd166", swatch: sw("#ffd166") },
+      { varName: "--cell",    hex: "#e7f1ea", swatch: sw("#e7f1ea", "border:1px solid rgba(120,200,160,0.2);") },
+      { varName: "--line",    hex: "rgba(120,200,160,.16)", swatch: sw("rgba(120,200,160,.16)", "border:1px solid rgba(120,200,160,0.2);") },
+    ];
+
+    const demoBase = "width:100%;height:36px;background:#0f2a20;border:1px solid rgba(94,243,138,0.3);";
+    const radiusCards = [
+      { name: "8px  --radius-sm", usage: "button · input · cell",  demo: demoBase + "border-radius:8px;" },
+      { name: "14px --radius-md", usage: "metric card · panel",    demo: demoBase + "border-radius:14px;" },
+      { name: "18px --radius-lg", usage: "level card · grid 容器",  demo: demoBase + "border-radius:18px;" },
+      { name: "24px --radius-xl", usage: "result-dialog",          demo: demoBase + "border-radius:24px;" },
+      { name: "--glow",           usage: "菌綠輝光（強調元素）",     demo: "width:100%;height:36px;border-radius:10px;background:#0f2a20;box-shadow:0 0 16px rgba(94,243,138,0.45);" },
+    ];
+
+    const diffs = [
+      {
+        selector: "body",
+        note: "改回深綠輝光底",
+        before: "background: radial-gradient(\n 120% 80% at 50% 0%,\n #eef5ee, #e2e8e3\n);",
+        after: "background: radial-gradient(\n 120% 80% at 50% -10%,\n #13362b 0%,\n #0a1714 55%,\n #081210 100%\n);"
+      },
+      {
+        selector: "button",
+        note: "深玻璃面板",
+        before: "border: 1px solid #dfe7df;\nbackground: #f0f5f0;\ncolor: #1a261f;\nbox-shadow: 0 3px 8px\n  rgba(31,60,45,.06);",
+        after: "border: 1px solid\n  rgba(120,200,160,0.16);\nbackground:\n  rgba(255,255,255,0.05);\ncolor: #eafff2;\nbox-shadow: 0 2px 8px\n  rgba(0,0,0,0.3);"
+      },
+      {
+        selector: "button.active / .primary-action",
+        note: "菌綠漸層＋輝光",
+        before: "color: #06281a;\nbackground: linear-gradient(\n  180deg,#3ed089,#2bb673\n);\nbox-shadow: 0 6px 16px\n  rgba(43,182,115,0.3);",
+        after: "color: #06231a;\nbackground: linear-gradient(\n  180deg,#5ef38a,#33c96a\n);\nbox-shadow: 0 6px 16px\n  rgba(94,243,138,0.3);"
+      },
+      {
+        selector: ".level-card",
+        note: "深玻璃卡＋菌綠邊",
+        before: "background: #ffffff;\nborder: 1px solid #e3ebe3;\nborder-radius: 20px;\nbox-shadow: 0 3px 8px\n  rgba(31,60,45,0.06);",
+        after: "background:\n  rgba(255,255,255,0.04);\nborder: 1px solid\n  rgba(120,200,160,0.16);\nborder-radius: 18px;\nbox-shadow: 0 2px 8px\n  rgba(0,0,0,0.3);"
+      },
+      {
+        selector: ".grid（格盤容器）",
+        note: "深玻璃培養盤",
+        before: "background: #ffffff;\nborder: 1px solid #dfe7df;\nborder-radius: 22px;\nbox-shadow: 0 6px 18px\n  rgba(31,60,45,0.1);",
+        after: "background:\n  rgba(255,255,255,0.03);\nborder: 1px solid\n  rgba(120,200,160,0.14);\nborder-radius: 18px;\nbox-shadow: 0 8px 22px\n  rgba(0,0,0,0.4);"
+      },
+      {
+        selector: ".cell",
+        note: "淺底培養孔＋內陰影",
+        before: "border-radius: 12px;\nbackground: #e3ebe4;\nbox-shadow: inset 0 -2px 0\n  rgba(0,0,0,0.06);",
+        after: "border-radius: 8px;\nbackground: #e7f1ea;\nbox-shadow:\n  inset 0 1px 0\n   rgba(255,255,255,0.6),\n  inset 0 -2px 4px\n   rgba(20,50,40,0.12);"
+      },
+      {
+        selector: ".cell.spreading",
+        note: "螢光菌綠取代珊瑚橘",
+        before: "background: #ffd9cc;\nborder-color: transparent;\nbox-shadow: 0 0 0 3px\n  rgba(255,122,89,0.45);\ntransform: scale(1.04);",
+        after: "background: #0f2a20;\nbox-shadow:\n  0 0 0 2px\n   rgba(94,243,138,0.9),\n  0 0 16px\n   rgba(94,243,138,0.55);\nanimation: bioPulse 1.6s\n  ease-in-out infinite;"
+      },
+      {
+        selector: ".result-dialog",
+        note: "深綠玻璃＋菌綠暈",
+        before: "background:\n  radial-gradient(circle at 50% 0%,\n  rgba(43,182,115,0.12),\n  transparent 38%), #ffffff;\nborder-color: #e3ebe3;\nborder-radius: 26px;",
+        after: "background:\n  radial-gradient(120% 80% at 50% 0%,\n  rgba(94,243,138,0.16),\n  transparent 45%),\n  linear-gradient(180deg,\n  #143027,#0e221c);\nborder-color:\n  rgba(94,243,138,0.25);\nborder-radius: 24px;"
+      },
+    ];
+
+    const cellSize = "width:54px;height:54px;border-radius:8px;position:relative;display:grid;place-items:center;";
+    const dotBase = "border-radius:50%;";
+    const cellStates = [
+      { name: ".cell",         desc: "空格 / 培養孔", demo: cellSize + "background:#e7f1ea;box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),inset 0 -2px 4px rgba(20,50,40,0.12);", dot: "" },
+      { name: ".selected",     desc: "玩家菌株",       demo: cellSize + "background:#0c1f18;box-shadow:0 0 0 2px rgba(94,243,138,0.85),0 0 14px rgba(94,243,138,0.45);", dot: dotBase + "width:44%;height:44%;background:#5ef38a;box-shadow:0 0 12px rgba(94,243,138,1);" },
+      { name: ".spreading",    desc: "當前擴散波",     demo: cellSize + "background:#0f2a20;box-shadow:0 0 0 2px rgba(94,243,138,0.9),0 0 16px rgba(94,243,138,0.55);", dot: dotBase + "width:34%;height:34%;background:#adffce;box-shadow:0 0 12px #5ef38a;" },
+      { name: ".infected",     desc: "已感染",         demo: cellSize + "background:#10241d;box-shadow:0 0 0 1px rgba(94,243,138,0.35),0 0 12px rgba(94,243,138,0.22);", dot: dotBase + "width:34%;height:34%;background:#5ef38a;box-shadow:0 0 9px rgba(94,243,138,0.9);" },
+      { name: ".requiredSeed", desc: "必放源",         demo: cellSize + "background:#dfeeff;box-shadow:inset 0 0 0 2px #4ea8ff,0 0 10px rgba(78,168,255,0.4);", dot: dotBase + "width:34%;height:34%;background:#4ea8ff;box-shadow:0 0 8px rgba(78,168,255,0.9);" },
+      { name: ".play-blockedSeed", desc: "禁放格",     demo: cellSize + "background:#f3dede;box-shadow:inset 0 0 0 2px #ff6b6b;background-image:repeating-linear-gradient(45deg,rgba(255,107,107,0.3) 0 4px,transparent 4px 8px);", dot: "" },
+      { name: ".hole",         desc: "空洞",           demo: cellSize + "background:transparent;border:1.5px dashed rgba(120,200,160,0.3);", dot: "" },
+    ];
+
+    const btnBase = "display:inline-grid;place-items:center;height:46px;padding:0 22px;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;cursor:pointer;";
+    const btnSamples = [
+      { label: "開始感染", style: btnBase + "background:linear-gradient(180deg,#5ef38a,#33c96a);color:#06231a;box-shadow:0 6px 16px rgba(94,243,138,0.3);border:none;" },
+      { label: "復原",     style: btnBase + "background:rgba(255,255,255,0.05);border:1px solid rgba(120,200,160,0.16);color:#eafff2;" },
+      { label: "重置",     style: btnBase + "background:rgba(255,255,255,0.05);border:1px solid rgba(120,200,160,0.16);color:#eafff2;" },
+      { label: "下一關",   style: btnBase + "background:linear-gradient(180deg,#5ef38a,#33c96a);color:#06231a;box-shadow:0 6px 16px rgba(94,243,138,0.3);border:none;" },
+    ];
+
+    return { colorChips, radiusCards, diffs, cellStates, btnSamples };
+  }
+}
+</script>
+</body>
+</html>
