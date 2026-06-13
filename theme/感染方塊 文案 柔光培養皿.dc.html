@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#f0f2f0;font-family:'Nunito','Noto Sans TC',system-ui,sans-serif;color:#1a261f;padding:52px 40px 80px;">
+  <div style="max-width:1080px;margin:0 auto;">
+
+    <!-- Header -->
+    <div style="margin-bottom:40px;">
+      <p style="margin:0 0 8px;font-size:11px;font-weight:800;letter-spacing:0.22em;color:#1f9e62;">SOFT PETRI · 柔光培養皿</p>
+      <h1 style="margin:0;font-size:38px;font-weight:700;font-family:'Fredoka',sans-serif;color:#1a261f;letter-spacing:-0.01em;">文案總表</h1>
+      <p style="margin:12px 0 0;font-size:14px;color:#5b7068;line-height:1.65;max-width:640px;">把「感染擴散」重新包裝成「<strong style="color:#1f9e62;">綠芽蔓延、生機綻放</strong>」的療癒花園語氣——溫和、鼓勵、零壓力。每條都附上對應的 i18n key 與英文，可直接填回 <code style="background:#e6ede7;padding:2px 6px;border-radius:5px;font-size:13px;">src/i18n.ts</code>。</p>
+    </div>
+
+    <!-- Voice principles -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:36px;">
+      <sc-for list="{{ principles }}" as="p" hint-placeholder-count="3">
+        <div style="background:#ffffff;border:1px solid #e3ebe3;border-radius:18px;padding:20px;box-shadow:0 4px 14px rgba(31,60,45,0.05);">
+          <div style="font-size:22px;margin-bottom:8px;">{{ p.icon }}</div>
+          <div style="font-size:15px;font-weight:700;color:#1a261f;font-family:'Fredoka',sans-serif;margin-bottom:6px;">{{ p.title }}</div>
+          <div style="font-size:12.5px;color:#6e827a;line-height:1.6;">{{ p.body }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- Naming pivot -->
+    <div style="background:linear-gradient(180deg,#ffffff,#f6faf6);border:1px solid #e3ebe3;border-radius:20px;padding:26px 28px;margin-bottom:36px;box-shadow:0 4px 14px rgba(31,60,45,0.05);">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:0.16em;color:#1f9e62;margin:0 0 18px;">用語對照 · 從「病毒」到「綠芽」</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+        <sc-for list="{{ termPivot }}" as="t" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;">
+            <span style="flex:0 0 auto;padding:5px 10px;border-radius:8px;background:#f0eceb;color:#9a8f8c;text-decoration:line-through;font-family:'Space Mono',monospace;font-size:12px;">{{ t.old }}</span>
+            <span style="color:#1f9e62;font-weight:700;">→</span>
+            <span style="flex:1;padding:5px 10px;border-radius:8px;background:#e6f5ec;color:#1f8a55;font-weight:700;">{{ t.new }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Copy tables by section -->
+    <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="8">
+      <div style="margin-bottom:30px;">
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
+          <h2 style="font-size:13px;font-weight:800;letter-spacing:0.16em;color:#1f9e62;margin:0;">{{ sec.num }} · {{ sec.title }}</h2>
+          <span style="font-size:12px;color:#9aa89f;">{{ sec.subtitle }}</span>
+        </div>
+        <div style="background:#ffffff;border:1px solid #e3ebe3;border-radius:18px;overflow:hidden;box-shadow:0 4px 14px rgba(31,60,45,0.05);">
+          <div style="display:grid;grid-template-columns:200px 1.4fr 1fr;gap:0;padding:11px 20px;background:#f3f7f3;font-size:11px;font-weight:800;letter-spacing:0.08em;color:#6e827a;">
+            <div>i18n KEY</div><div>中文（柔光培養皿）</div><div>ENGLISH</div>
+          </div>
+          <sc-for list="{{ sec.rows }}" as="r" hint-placeholder-count="5">
+            <div style="{{ r.rowStyle }}">
+              <div style="font-family:'Space Mono',monospace;font-size:11.5px;color:#9a8f8c;align-self:center;">{{ r.key }}</div>
+              <div style="font-size:13.5px;color:#1a261f;font-weight:600;align-self:center;padding-right:14px;line-height:1.5;">{{ r.zh }}</div>
+              <div style="font-size:12.5px;color:#6e827a;align-self:center;line-height:1.5;">{{ r.en }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+
+    <!-- Microcopy showcase -->
+    <div style="margin-top:8px;background:linear-gradient(180deg,#ffffff,#f6faf6);border:1px solid #e3ebe3;border-radius:20px;padding:28px;box-shadow:0 4px 14px rgba(31,60,45,0.05);">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:0.16em;color:#1f9e62;margin:0 0 8px;">情境示意 · 結算與鼓勵語</h2>
+      <p style="font-size:12.5px;color:#6e827a;margin:0 0 20px;">星等對應不同鼓勵語，避免一星時讓玩家有挫敗感。</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <sc-for list="{{ resultCards }}" as="c" hint-placeholder-count="3">
+          <div style="border-radius:18px;padding:22px 18px;text-align:center;background:#ffffff;border:1px solid #e9efe9;box-shadow:0 3px 10px rgba(31,60,45,0.05);">
+            <div style="font-size:22px;letter-spacing:3px;margin-bottom:10px;color:#ff9f1c;">{{ c.stars }}</div>
+            <div style="font-size:17px;font-weight:700;font-family:'Fredoka',sans-serif;color:#1a261f;margin-bottom:6px;">{{ c.title }}</div>
+            <div style="font-size:12.5px;color:#6e827a;line-height:1.55;">{{ c.body }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  renderVals() {
+    const principles = [
+      { icon: "🌱", title: "生機，而非病態", body: "用「綠芽、蔓延、綻放、甦醒」取代「病毒、感染、淪陷」。整體像照顧一座小花園，而不是擴散疫情。" },
+      { icon: "🫧", title: "溫和有禮", body: "短句、不命令。提示用邀請語氣（「試試看…」），失敗不說「錯」，改說「再調整一下」。" },
+      { icon: "✨", title: "正向收尾", body: "每一關結束都給肯定，即使一星也鼓勵。把焦點放在「你讓整座盤都活起來了」。" },
+    ];
+
+    const termPivot = [
+      { old: "感染源", new: "綠芽 / 苗點" },
+      { old: "感染擴散", new: "蔓延生長" },
+      { old: "淪陷", new: "甦醒 / 染綠" },
+      { old: "病毒區", new: "培養皿 / 花圃" },
+      { old: "開始感染", new: "開始生長" },
+      { old: "禁放格", new: "休眠格" },
+      { old: "必放格", new: "種子點" },
+      { old: "通關失敗", new: "尚未長滿" },
+    ];
+
+    const rowA = "display:grid;grid-template-columns:200px 1.4fr 1fr;gap:0;padding:13px 20px;border-top:1px solid #eef3ee;";
+    const rowB = rowA + "background:#fbfdfb;";
+    const mkRows = (arr) => arr.map((r, i) => ({ ...r, rowStyle: i % 2 ? rowB : rowA }));
+
+    const sections = [
+      {
+        num: "01", title: "App 名稱 & 商店", subtitle: "Store listing",
+        rows: mkRows([
+          { key: "app.name", zh: "綠芽方塊", en: "Bloom Blocks" },
+          { key: "app.tagline", zh: "種下一點，蔓延成整片綠意", en: "Plant one. Grow it all." },
+          { key: "store.subtitle", zh: "極簡療癒的格盤生長解謎", en: "A calm grid-growing puzzle" },
+          { key: "store.desc.line1", zh: "在格盤上種下幾顆綠芽，看它們自己蔓延、串連、染綠整座培養皿。", en: "Place a few sprouts and watch them spread to fill the whole petri dish." },
+          { key: "store.desc.line2", zh: "用越少的種子長滿越多，就拿越多星。隨手玩、慢慢想，零壓力。", en: "Fewer seeds, more bloom, more stars. Pick up anytime, no pressure." },
+        ])
+      },
+      {
+        num: "02", title: "主選單 & 關卡選擇", subtitle: "Home & level select",
+        rows: mkRows([
+          { key: "menu.play", zh: "開始種植", en: "Start Growing" },
+          { key: "menu.continue", zh: "繼續培養", en: "Continue" },
+          { key: "pack.free", zh: "綠芽培養皿", en: "Sprout Dish" },
+          { key: "pack.paid", zh: "繁花花圃", en: "Bloom Garden" },
+          { key: "levels.progress", zh: "已長滿 {done} / {total} 盤", en: "{done} / {total} dishes bloomed" },
+          { key: "levels.stars", zh: "共收集 {n} 顆星", en: "{n} stars collected" },
+          { key: "level.locked", zh: "先長滿前一盤就會解鎖", en: "Bloom the previous dish to unlock" },
+        ])
+      },
+      {
+        num: "03", title: "遊玩畫面", subtitle: "In-game HUD",
+        rows: mkRows([
+          { key: "play.levelLabel", zh: "第 {n} 盤", en: "Dish {n}" },
+          { key: "play.seeds", zh: "綠芽", en: "Sprouts" },
+          { key: "play.target", zh: "三星目標", en: "3★ goal" },
+          { key: "play.targetHint", zh: "{n} 顆以內", en: "{n} or fewer" },
+          { key: "play.hintEmpty", zh: "點任意格子種下綠芽，越少越好。", en: "Tap a cell to plant a sprout — fewer is better." },
+          { key: "play.hintRule", zh: "被兩側鄰格夾住的格子，會自己染綠。", en: "A cell hugged by two neighbours turns green on its own." },
+          { key: "play.hintMax", zh: "綠芽夠了，先移走一顆再試別處。", en: "Enough sprouts — remove one to try elsewhere." },
+          { key: "play.growing", zh: "蔓延中⋯", en: "Spreading…" },
+        ])
+      },
+      {
+        num: "04", title: "按鈕", subtitle: "Buttons",
+        rows: mkRows([
+          { key: "btn.start", zh: "開始生長", en: "Grow" },
+          { key: "btn.undo", zh: "收回", en: "Undo" },
+          { key: "btn.reset", zh: "重整", en: "Reset" },
+          { key: "btn.next", zh: "下一盤", en: "Next Dish" },
+          { key: "btn.retry", zh: "再試一次", en: "Try Again" },
+          { key: "btn.back", zh: "返回", en: "Back" },
+        ])
+      },
+      {
+        num: "05", title: "通關結算", subtitle: "Victory",
+        rows: mkRows([
+          { key: "win.eyebrow", zh: "整盤都活起來了 100%", en: "Fully bloomed · 100%" },
+          { key: "win.title", zh: "長滿囉！", en: "All bloomed!" },
+          { key: "win.seedsUsed", zh: "用了 {n} 顆綠芽", en: "Grown from {n} sprouts" },
+          { key: "win.record", zh: "· 刷新最佳！", en: "· New best!" },
+          { key: "win.star3", zh: "完美！恰到好處的幾顆芽", en: "Perfect — just enough sprouts" },
+          { key: "win.star2", zh: "長得很好，還能更精簡", en: "Lovely. Room to trim a sprout" },
+          { key: "win.star1", zh: "整盤都綠了，先收下這份成果", en: "It all bloomed — take the win" },
+        ])
+      },
+      {
+        num: "06", title: "尚未過關", subtitle: "Not-yet states (避免負面詞)",
+        rows: mkRows([
+          { key: "fail.title", zh: "還沒長滿", en: "Not quite full" },
+          { key: "fail.incomplete", zh: "還有格子沒染綠，試著讓綠芽彼此「夾住」更多空格。", en: "Some cells stayed empty — let your sprouts hug more of them." },
+          { key: "fail.tooMany", zh: "綠芽有點多，試試用更少幾顆。", en: "A few too many sprouts — try with fewer." },
+          { key: "fail.missingSeed", zh: "藍色種子點記得也要種下喔。", en: "Don't forget the blue seed points." },
+          { key: "fail.blocked", zh: "灰色休眠格不能當起點，換個位置吧。", en: "Dormant cells can't be a starting point." },
+        ])
+      },
+      {
+        num: "07", title: "新手引導", subtitle: "Onboarding (3 步)",
+        rows: mkRows([
+          { key: "tut.1.title", zh: "種下綠芽", en: "Plant a sprout" },
+          { key: "tut.1.body", zh: "點空格放下一顆綠芽。它是蔓延的起點。", en: "Tap an empty cell to place a sprout — your starting point." },
+          { key: "tut.2.title", zh: "看它蔓延", en: "Watch it spread" },
+          { key: "tut.2.body", zh: "任何被兩個綠鄰格夾住的格子，會自動染綠，連鎖下去。", en: "Any cell hugged by two green neighbours turns green, chaining onward." },
+          { key: "tut.3.title", zh: "越少越好", en: "Fewer is better" },
+          { key: "tut.3.body", zh: "用最少的綠芽長滿整盤，就能拿到三顆星。", en: "Bloom the whole dish with the fewest sprouts for 3 stars." },
+          { key: "tut.skip", zh: "略過", en: "Skip" },
+        ])
+      },
+      {
+        num: "08", title: "設定 & 系統", subtitle: "Settings & system",
+        rows: mkRows([
+          { key: "settings.title", zh: "設定", en: "Settings" },
+          { key: "settings.sound", zh: "音效", en: "Sound" },
+          { key: "settings.haptics", zh: "震動回饋", en: "Haptics" },
+          { key: "settings.language", zh: "語言", en: "Language" },
+          { key: "settings.resetProgress", zh: "清空培養紀錄", en: "Reset progress" },
+          { key: "settings.resetConfirm", zh: "確定要清空所有培養紀錄嗎？這無法復原。", en: "Clear all progress? This can't be undone." },
+          { key: "sys.offline", zh: "離線也能慢慢種，紀錄都留在這台裝置。", en: "Plays offline — progress stays on this device." },
+        ])
+      },
+    ];
+
+    const resultCards = [
+      { stars: "★★★", title: "長滿囉！", body: "完美！恰到好處的幾顆芽。" },
+      { stars: "★★☆", title: "長滿囉！", body: "長得很好，還能更精簡一點。" },
+      { stars: "★☆☆", title: "長滿囉！", body: "整盤都綠了，先收下這份成果 🌿" },
+    ];
+
+    return { principles, termPivot, sections, resultCards };
+  }
+}
+</script>
+</body>
+</html>

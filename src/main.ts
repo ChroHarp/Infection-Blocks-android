@@ -48,12 +48,12 @@ if (!appRoot) {
 
 const root = appRoot;
 
-const initialLevels = loadEditorLevels(sampleLevels);
-const initialIndex = loadEditorIndex(initialLevels.length);
-const initialLevel = initialLevels[initialIndex];
 const searchParams = new URLSearchParams(window.location.search);
 const editorBuildEnabled = import.meta.env.VITE_ENABLE_EDITOR !== "false";
 const editorEnabled = editorBuildEnabled && (searchParams.get("editor") === "1" || window.location.pathname.endsWith("/editor.html"));
+const initialLevels = editorEnabled ? loadEditorLevels(sampleLevels) : sampleLevels;
+const initialIndex = editorEnabled ? loadEditorIndex(initialLevels.length) : 0;
+const initialLevel = initialLevels[initialIndex];
 
 const state: AppState = {
   locale: loadLocale(),
@@ -78,7 +78,7 @@ const state: AppState = {
 
 function render(): void {
   root.innerHTML = `
-    <main class="app-shell">
+    <main class="app-shell screen-${state.screen}">
       <header class="app-header">
         <div>
           <p class="eyebrow">INFECTION BLOCKS</p>
@@ -338,6 +338,7 @@ function renderVictoryDialog(): string {
         <p class="result-message">${t(state.locale, "victoryMessage")}</p>
         <div class="result-actions">
           <button class="primary-action" data-action="next-after-win" ${hasNext ? "" : "disabled"}>${t(state.locale, "nextLevel")}</button>
+          <button data-action="retry-after-win">${t(state.locale, "retryLevel")}</button>
           <button data-action="exit-after-win">${t(state.locale, "backToLevels")}</button>
         </div>
       </section>
@@ -363,39 +364,17 @@ function renderFailureDialog(): string {
   return `
     <div class="modal-backdrop" role="dialog" aria-modal="true">
       <section class="result-dialog failure-dialog">
-        <span class="result-kicker">${modalText("failureKicker")}</span>
+        <span class="result-kicker">${t(state.locale, "failureKicker")}</span>
         <h2>${t(state.locale, "failed")}</h2>
         <div class="failure-mark" aria-hidden="true">!</div>
         <p class="result-message">${message}</p>
         <div class="result-actions">
-          <button class="primary-action" data-action="return-after-fail">${modalText("returnToLevel")}</button>
-          <button data-action="exit-after-fail">${modalText("exitLevel")}</button>
+          <button class="primary-action" data-action="return-after-fail">${t(state.locale, "returnToLevel")}</button>
+          <button data-action="exit-after-fail">${t(state.locale, "exitLevel")}</button>
         </div>
       </section>
     </div>
   `;
-}
-
-function modalText(key: "failureKicker" | "returnToLevel" | "exitLevel"): string {
-  const text: Record<Locale, Record<typeof key, string>> = {
-    "zh-Hant": {
-      failureKicker: "感染失敗",
-      returnToLevel: "回到關卡",
-      exitLevel: "退出"
-    },
-    en: {
-      failureKicker: "Infection Failed",
-      returnToLevel: "Back to Level",
-      exitLevel: "Exit"
-    },
-    ja: {
-      failureKicker: "感染失敗",
-      returnToLevel: "ステージに戻る",
-      exitLevel: "終了"
-    }
-  };
-
-  return text[state.locale][key];
 }
 
 function renderEditor(): string {
@@ -506,6 +485,7 @@ function bindEvents(): void {
   root.querySelector<HTMLElement>("[data-action='continue-package']")?.addEventListener("click", continuePackage);
   root.querySelector<HTMLElement>("[data-action='back-levels']")?.addEventListener("click", () => setScreen("levels"));
   root.querySelector<HTMLElement>("[data-action='next-after-win']")?.addEventListener("click", openNextLevelAfterWin);
+  root.querySelector<HTMLElement>("[data-action='retry-after-win']")?.addEventListener("click", retryAfterWin);
   root.querySelector<HTMLElement>("[data-action='exit-after-win']")?.addEventListener("click", exitAfterWin);
   root.querySelector<HTMLElement>("[data-action='return-after-fail']")?.addEventListener("click", returnAfterFail);
   root.querySelector<HTMLElement>("[data-action='exit-after-fail']")?.addEventListener("click", exitAfterFail);
@@ -604,8 +584,13 @@ function exitAfterWin(): void {
   setScreen("levels");
 }
 
+function retryAfterWin(): void {
+  resetPlayState();
+}
+
 function returnAfterFail(): void {
-  state.failureOpen = false;
+  clearRunState();
+  state.messageKey = "readyToInfect";
   render();
 }
 
@@ -860,6 +845,8 @@ function normalizeLevel(): void {
 }
 
 function saveCurrentLevel(): void {
+  if (!editorEnabled) return;
+
   state.levels[state.levelIndex] = state.level;
   saveEditorLevels(state.levels);
   saveEditorIndex(state.levelIndex);
@@ -877,8 +864,10 @@ function switchLevel(index: number): void {
   state.victoryOpen = false;
   state.failureOpen = false;
   state.messageKey = "readyToInfect";
-  exportJson();
-  saveEditorIndex(nextIndex);
+  if (editorEnabled) {
+    exportJson();
+    saveEditorIndex(nextIndex);
+  }
 }
 
 function createLevel(): void {
@@ -1102,7 +1091,7 @@ function starText(stars: number, maxStars = 3): string {
 function calculateCellSize(mode: "editor" | "play"): number {
   const maxDimension = Math.max(state.level.rows, state.level.cols);
   const availableWidth = window.innerWidth - 44;
-  const availableHeight = window.innerHeight * (mode === "play" ? 0.58 : 0.52);
+  const availableHeight = mode === "play" ? window.innerHeight - 330 : window.innerHeight * 0.52;
   const boardLimit = Math.min(availableWidth, availableHeight, 620);
   const gapSize = 6;
   const paddingSize = 28;

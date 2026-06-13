@@ -18,9 +18,9 @@ export const sampleLevelPacks: LevelPack[] = [
         "maxSeeds": 7,
         "free": true,
         "stars": {
-          "two": 6,
           "three": 5,
-          "one": 7
+          "one": 7,
+          "two": 6
         },
         "holes": [],
         "requiredSeeds": [],
@@ -37,8 +37,8 @@ export const sampleLevelPacks: LevelPack[] = [
         "free": true,
         "stars": {
           "two": 6,
-          "three": 5,
-          "one": 7
+          "one": 7,
+          "three": 5
         },
         "holes": [],
         "requiredSeeds": [],
@@ -54,9 +54,9 @@ export const sampleLevelPacks: LevelPack[] = [
         "maxSeeds": 6,
         "free": true,
         "stars": {
-          "two": 5,
           "three": 4,
-          "one": 6
+          "one": 6,
+          "two": 5
         },
         "holes": [],
         "requiredSeeds": [],
@@ -73,8 +73,8 @@ export const sampleLevelPacks: LevelPack[] = [
         "free": true,
         "stars": {
           "two": 6,
-          "three": 5,
-          "one": 7
+          "one": 7,
+          "three": 5
         },
         "holes": [],
         "requiredSeeds": [],
@@ -90,9 +90,9 @@ export const sampleLevelPacks: LevelPack[] = [
         "maxSeeds": 7,
         "free": true,
         "stars": {
+          "one": 7,
           "two": 6,
-          "three": 5,
-          "one": 7
+          "three": 5
         },
         "holes": [
           [
@@ -114,8 +114,8 @@ export const sampleLevelPacks: LevelPack[] = [
         "free": true,
         "stars": {
           "two": 5,
-          "three": 4,
-          "one": 6
+          "one": 6,
+          "three": 4
         },
         "holes": [
           [
@@ -197,12 +197,12 @@ export const sampleLevelPacks: LevelPack[] = [
         "titleKey": "level.world1.08",
         "rows": 6,
         "cols": 3,
-        "maxSeeds": 7,
+        "maxSeeds": 8,
         "free": true,
         "stars": {
-          "one": 7,
-          "three": 5,
-          "two": 6
+          "one": 8,
+          "two": 7,
+          "three": 6
         },
         "holes": [
           [
@@ -264,12 +264,25 @@ export const sampleLevelPacks: LevelPack[] = [
           "two": 7,
           "three": 6
         },
-        "holes": [],
+        "holes": [
+          [
+            1,
+            0
+          ],
+          [
+            3,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ],
         "requiredSeeds": [],
         "blockedSeeds": [
           [
             3,
-            0
+            1
           ]
         ]
       },
@@ -280,12 +293,12 @@ export const sampleLevelPacks: LevelPack[] = [
         "titleKey": "level.world1.10",
         "rows": 6,
         "cols": 3,
-        "maxSeeds": 7,
+        "maxSeeds": 8,
         "free": true,
         "stars": {
-          "one": 7,
-          "two": 6,
-          "three": 5
+          "one": 8,
+          "two": 7,
+          "three": 6
         },
         "holes": [
           [
@@ -333,8 +346,8 @@ export const sampleLevelPacks: LevelPack[] = [
         "maxSeeds": 8,
         "free": false,
         "stars": {
-          "one": null,
           "two": 8,
+          "one": null,
           "three": 5
         },
         "holes": [
@@ -400,8 +413,8 @@ export const sampleLevelPacks: LevelPack[] = [
         "maxSeeds": 4,
         "free": false,
         "stars": {
-          "two": null,
           "three": 4,
+          "two": null,
           "one": null
         },
         "holes": [
