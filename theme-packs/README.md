@@ -6,6 +6,7 @@
 
 - `styles.css`：整套視覺樣式、色票、版面、元件狀態、動畫。
 - `i18n.ts`：同一套 UI key 的文案字典，需包含 `zh-Hant`、`en`、`ja`。
+- `assets/`：可選。圖片、sprite sheet、狀態 overlay 等主題素材。
 
 目前主題包：
 
@@ -20,6 +21,13 @@
 ```powershell
 Copy-Item theme-packs\biolab\styles.css src\styles.css -Force
 Copy-Item theme-packs\biolab\i18n.ts src\i18n.ts -Force
+```
+
+如果主題包有 `assets/`，也要同步到 `src/assets/theme`：
+
+```powershell
+New-Item -ItemType Directory -Force src\assets\theme
+Copy-Item theme-packs\soft-petri\assets\* src\assets\theme\ -Force
 ```
 
 如果主題使用不同字型或瀏覽器 theme color，還要同步更新：

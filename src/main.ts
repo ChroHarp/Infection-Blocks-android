@@ -32,7 +32,10 @@ interface AppState {
   jsonText: string;
   resultInfected: Set<string>;
   waveCells: Set<string>;
+  finishBloomCells: Set<string>;
   isSpreading: boolean;
+  isFinalizing: boolean;
+  failureDimming: boolean;
   victoryOpen: boolean;
   failureOpen: boolean;
   boardShakeKey: number;
@@ -68,7 +71,10 @@ const state: AppState = {
   jsonText: JSON.stringify(initialLevel, null, 2),
   resultInfected: new Set(),
   waveCells: new Set(),
+  finishBloomCells: new Set(),
   isSpreading: false,
+  isFinalizing: false,
+  failureDimming: false,
   victoryOpen: false,
   failureOpen: false,
   boardShakeKey: 0,
@@ -290,7 +296,7 @@ function renderPlayScreen(): string {
         <div class="status-stars">${progress?.completed ? "★".repeat(progress.bestStars) : "☆☆☆"}</div>
       </header>
 
-      <section class="board-stage ${state.boardShakeKey > 0 ? "limit-shake" : ""}">
+      <section class="board-stage ${state.boardShakeKey > 0 ? "limit-shake" : ""} ${state.failureDimming ? "failure-dimming" : ""}">
         ${renderGrid("play")}
       </section>
 
@@ -305,11 +311,11 @@ function renderPlayScreen(): string {
             <strong>${"★".repeat(state.lastStars)}${"☆".repeat(3 - state.lastStars)}</strong>
           </div>
         </div>
-        <p class="message">${t(state.locale, state.isSpreading ? "spreading" : state.messageKey)}</p>
+        <p class="message">${t(state.locale, state.isSpreading || (state.isFinalizing && !state.failureDimming) ? "spreading" : state.messageKey)}</p>
         <div class="bottom-actions">
-          <button data-action="undo" ${state.isSpreading ? "disabled" : ""}>${t(state.locale, "undo")}</button>
-          <button class="primary-action" data-action="start-infection" ${state.isSpreading || state.seeds.length === 0 ? "disabled" : ""}>${t(state.locale, "start")}</button>
-          <button data-action="reset-seeds" ${state.isSpreading ? "disabled" : ""}>${t(state.locale, "reset")}</button>
+          <button data-action="undo" ${state.isSpreading || state.isFinalizing ? "disabled" : ""}>${t(state.locale, "undo")}</button>
+          <button class="primary-action" data-action="start-infection" ${state.isSpreading || state.isFinalizing || state.seeds.length === 0 ? "disabled" : ""}>${t(state.locale, "start")}</button>
+          <button data-action="reset-seeds" ${state.isSpreading || state.isFinalizing ? "disabled" : ""}>${t(state.locale, "reset")}</button>
         </div>
       </section>
 
@@ -445,11 +451,12 @@ function renderGrid(mode: "editor" | "play"): string {
       const selected = state.seeds.some((coord) => coordKey(coord) === key);
       const infected = state.resultInfected.has(key);
       const spreading = state.waveCells.has(key);
+      const blooming = state.finishBloomCells.has(key);
       const playKind = mode === "play" ? `play-${kind}` : "";
 
       cells.push(`
         <button
-          class="cell ${kind} ${playKind} ${selected ? "selected" : ""} ${infected ? "infected" : ""} ${spreading ? "spreading" : ""}"
+          class="cell ${kind} ${playKind} ${selected ? "selected" : ""} ${infected ? "infected" : ""} ${spreading ? "spreading" : ""} ${blooming ? "blooming" : ""}"
           data-cell="${row},${col}"
           type="button"
           aria-label="${row + 1},${col + 1}"
@@ -539,6 +546,7 @@ function setScreen(screen: Screen): void {
 
   state.screen = screen;
   if (screen === "packages" || screen === "levels") {
+    clearTransientRunFlags();
     state.victoryOpen = false;
     state.failureOpen = false;
   }
@@ -645,7 +653,7 @@ function editCell(row: number, col: number): void {
 }
 
 function toggleSeed(row: number, col: number): void {
-  if (state.isSpreading) return;
+  if (state.isSpreading || state.isFinalizing) return;
 
   const kind = getCellKind(state.level, row, col);
   if (kind === "hole" || kind === "blockedSeed" || kind === "requiredSeed") return;
@@ -664,8 +672,10 @@ function toggleSeed(row: number, col: number): void {
 
   state.resultInfected = new Set();
   state.waveCells = new Set();
+  state.finishBloomCells = new Set();
   state.lastStars = 0;
   state.failureOpen = false;
+  state.failureDimming = false;
   state.messageKey = "readyToInfect";
 }
 
@@ -682,19 +692,20 @@ function triggerSeedLimitFeedback(): void {
 }
 
 async function startInfection(): Promise<void> {
-  if (state.isSpreading || state.seeds.length === 0) return;
+  if (state.isSpreading || state.isFinalizing || state.seeds.length === 0) return;
 
   const result = runInfection(state.level, state.seeds);
   state.resultInfected = new Set(state.seeds.map(coordKey));
   state.waveCells = new Set();
+  state.finishBloomCells = new Set();
   state.lastStars = 0;
   state.victoryOpen = false;
   state.failureOpen = false;
+  state.failureDimming = false;
 
   if (result.failureReason && result.waves.length === 0) {
     state.messageKey = result.failureReason;
-    state.failureOpen = true;
-    render();
+    await showFailureAfterDim();
     return;
   }
 
@@ -720,11 +731,49 @@ async function startInfection(): Promise<void> {
 
   if (result.completed) {
     recordProgress(result.stars, result.seedsUsed);
+    await playCompletionBloomRows();
     state.victoryOpen = true;
   } else {
-    state.failureOpen = true;
+    await showFailureAfterDim();
+    return;
   }
 
+  render();
+}
+
+async function playCompletionBloomRows(): Promise<void> {
+  state.isFinalizing = true;
+  state.finishBloomCells = new Set();
+  state.resultInfected = new Set(playableCellKeys(state.level));
+  render();
+
+  for (let row = 0; row < state.level.rows; row += 1) {
+    const rowKeys = playableCellKeysInRow(state.level, row);
+    if (rowKeys.length === 0) continue;
+    state.finishBloomCells = new Set(rowKeys);
+    render();
+    await wait(170);
+  }
+
+  await wait(280);
+  state.finishBloomCells = new Set();
+  state.isFinalizing = false;
+}
+
+async function showFailureAfterDim(): Promise<void> {
+  state.isSpreading = false;
+  state.isFinalizing = true;
+  state.waveCells = new Set();
+  state.finishBloomCells = new Set();
+  state.failureOpen = false;
+  render();
+  await wait(500);
+  state.failureDimming = true;
+  render();
+  await wait(1000);
+  state.failureDimming = false;
+  state.isFinalizing = false;
+  state.failureOpen = true;
   render();
 }
 
@@ -744,7 +793,7 @@ function recordProgress(stars: 0 | 1 | 2 | 3, seedsUsed: number): void {
 }
 
 function undoSeed(): void {
-  if (state.isSpreading) return;
+  if (state.isSpreading || state.isFinalizing) return;
   const required = new Set(state.level.requiredSeeds.map(coordKey));
   const reversed = [...state.seeds].reverse();
   const removable = reversed.find((coord) => !required.has(coordKey(coord)));
@@ -757,7 +806,7 @@ function undoSeed(): void {
 }
 
 function resetPlayState(): void {
-  if (state.isSpreading) return;
+  if (state.isSpreading || state.isFinalizing) return;
   resetToRequiredSeeds();
   clearRunState();
   state.failureOpen = false;
@@ -769,9 +818,18 @@ function resetPlayState(): void {
 function clearRunState(): void {
   state.resultInfected = new Set();
   state.waveCells = new Set();
+  state.finishBloomCells = new Set();
   state.lastStars = 0;
   state.failureOpen = false;
   state.victoryOpen = false;
+  state.failureDimming = false;
+  clearTransientRunFlags();
+}
+
+function clearTransientRunFlags(): void {
+  state.isSpreading = false;
+  state.isFinalizing = false;
+  state.failureDimming = false;
 }
 
 function updateField(input: HTMLInputElement | HTMLSelectElement): void {
@@ -860,7 +918,7 @@ function switchLevel(index: number): void {
   state.selectedPackId = state.level.packId;
   resetToRequiredSeeds();
   clearRunState();
-  state.isSpreading = false;
+  clearTransientRunFlags();
   state.victoryOpen = false;
   state.failureOpen = false;
   state.messageKey = "readyToInfect";
@@ -897,7 +955,7 @@ function createLevel(): void {
   state.level = level;
   resetToRequiredSeeds();
   clearRunState();
-  state.isSpreading = false;
+  clearTransientRunFlags();
   state.messageKey = "editorHelp";
   saveCurrentLevel();
   exportJson();
@@ -921,7 +979,7 @@ function duplicateLevel(): void {
   state.level = level;
   resetToRequiredSeeds();
   clearRunState();
-  state.isSpreading = false;
+  clearTransientRunFlags();
   state.messageKey = "editorHelp";
   saveCurrentLevel();
   exportJson();
@@ -1047,6 +1105,28 @@ function getCellKind(level: Level, row: number, col: number): CellKind {
   if (level.requiredSeeds.some((coord) => coordKey(coord) === key)) return "requiredSeed";
   if (level.blockedSeeds.some((coord) => coordKey(coord) === key)) return "blockedSeed";
   return "playable";
+}
+
+function playableCellKeys(level: Level): string[] {
+  const keys: string[] = [];
+
+  for (let row = 0; row < level.rows; row += 1) {
+    keys.push(...playableCellKeysInRow(level, row));
+  }
+
+  return keys;
+}
+
+function playableCellKeysInRow(level: Level, row: number): string[] {
+  const keys: string[] = [];
+
+  for (let col = 0; col < level.cols; col += 1) {
+    if (getCellKind(level, row, col) !== "hole") {
+      keys.push(`${row}:${col}`);
+    }
+  }
+
+  return keys;
 }
 
 function tabButton(screen: Screen, labelKey: string): string {
