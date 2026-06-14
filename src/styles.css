@@ -458,12 +458,12 @@ h2 {
   content: "";
   opacity: 0;
   transition:
-    background-color 1000ms ease,
-    opacity 1000ms ease;
+    background-color 1200ms ease,
+    opacity 1200ms ease;
 }
 
 .board-stage.failure-dimming::after {
-  background: rgba(24, 34, 28, 0.56);
+  background: rgba(24, 34, 28, 0.38);
   opacity: 1;
 }
 
@@ -808,14 +808,37 @@ h2 {
   }
 }
 
+@keyframes sprout-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-2px) scale(1.035);
+  }
+}
+
+@keyframes glass-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(76, 154, 255, 0));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 12px rgba(76, 154, 255, 0.38));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop,
   .result-dialog,
   .result-star,
   .result-burst span,
   .failure-mark,
-  .cell.spreading::after,
-  .cell.blooming::before,
+  .cell.selected::after,
+  .cell-wave,
+  .cell-bloom,
   .board-stage.limit-shake .grid {
     animation: none;
   }
@@ -949,18 +972,28 @@ h2 {
 .cell.play-blockedSeed {
   border: 2px solid var(--danger);
   background-color: #fff1f2;
-  background-image: repeating-linear-gradient(45deg, rgba(255, 93, 108, 0.25) 0 4px, transparent 4px 8px);
+  background-image: none;
   cursor: not-allowed;
 }
 
-.cell.selected::after,
-.cell.infected::after {
+.cell.play-blockedSeed::before {
   position: absolute;
-  inset: 27%;
-  border-radius: 50%;
-  background: #2bb673;
-  box-shadow: 0 0 10px rgba(43, 182, 115, 0.7);
+  z-index: 3;
+  inset: -17%;
+  pointer-events: none;
+  background: url("./assets/theme/blocked.png") center / contain no-repeat;
   content: "";
+}
+
+.cell.selected::after {
+  position: absolute;
+  z-index: 2;
+  inset: -18%;
+  pointer-events: none;
+  background: url("./assets/theme/selected.png") center / contain no-repeat;
+  content: "";
+  animation: sprout-breathe 1.8s ease-in-out infinite;
+  transform-origin: 50% 72%;
 }
 
 .cell.selected {
@@ -979,14 +1012,18 @@ h2 {
 }
 
 .cell.infected::after {
-  background: #2bb673;
-  box-shadow: 0 0 8px rgba(43, 182, 115, 0.5);
+  position: absolute;
+  z-index: 1;
+  inset: -11%;
+  pointer-events: none;
+  background: url("./assets/theme/infected.png") center / 112% 112% no-repeat;
+  content: "";
 }
 
 .cell.spreading {
   border-color: transparent;
-  background: #ffd9cc;
-  box-shadow: 0 0 0 3px rgba(255, 122, 89, 0.45);
+  background: #fff7dd;
+  box-shadow: 0 0 0 3px rgba(255, 203, 119, 0.42);
   transform: scale(1.04);
 }
 
@@ -999,32 +1036,59 @@ h2 {
 }
 
 .cell.blooming::before {
+  display: none;
+}
+
+.cell-wave,
+.cell-bloom {
   position: absolute;
   z-index: 45;
-  inset: 18%;
-  border-radius: 50%;
+  inset: -42%;
   pointer-events: none;
-  background: rgba(43, 182, 115, 0.28);
-  box-shadow: 0 0 12px rgba(43, 182, 115, 0.45);
-  content: "";
+  background: url("./assets/theme/spreading.png") center / contain no-repeat;
+  filter: drop-shadow(0 8px 12px rgba(73, 92, 49, 0.2));
+}
+
+.cell-wave {
+  animation: petal-spread 740ms ease-out both;
+}
+
+.cell-bloom {
   animation: row-bloom 760ms ease-out both;
 }
 
 .cell.requiredSeed.selected::after {
   display: block;
-  background: #4c9aff;
-  box-shadow: 0 0 10px rgba(76, 154, 255, 0.65);
+  inset: -18%;
+  background: url("./assets/theme/required-seed.png") center / contain no-repeat;
+  box-shadow: none;
+  animation: glass-pulse 2.4s ease-in-out infinite;
 }
 
 .cell.play-requiredSeed.selected::after {
   display: block;
-  background: #2bb673;
-  box-shadow: 0 0 10px rgba(43, 182, 115, 0.7);
+  inset: -18%;
+  background: url("./assets/theme/required-seed.png") center / contain no-repeat;
+  box-shadow: none;
+  animation: glass-pulse 2.4s ease-in-out infinite;
+}
+
+.cell.selected.spreading::after,
+.cell.requiredSeed.selected.spreading::after,
+.cell.play-requiredSeed.selected.spreading::after {
+  display: none;
+}
+
+.cell.requiredSeed.selected.infected::after,
+.cell.play-requiredSeed.selected.infected::after {
+  inset: -11%;
+  background: url("./assets/theme/infected.png") center / 112% 112% no-repeat;
+  animation: none;
 }
 
 .cell.play-blockedSeed.infected {
-  background-color: #bfe9cf;
-  background-image: repeating-linear-gradient(45deg, rgba(255, 93, 108, 0.18) 0 4px, transparent 4px 8px);
+  background-color: #dcebdc;
+  background-image: none;
 }
 
 @media (max-width: 820px) {

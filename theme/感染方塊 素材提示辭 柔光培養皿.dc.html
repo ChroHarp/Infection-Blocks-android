@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; }
+  @keyframes sp-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+  @keyframes sp-glow { 0%,100% { box-shadow: inset 0 0 0 2px #2bb673, 0 0 0 0 rgba(43,182,115,0); } 50% { box-shadow: inset 0 0 0 2px #2bb673, 0 0 14px 2px rgba(43,182,115,.35); } }
+  @keyframes sp-petal { 0% { opacity:0; transform: scale(.7) rotate(-6deg); } 45% { opacity:1; } 100% { opacity:.92; transform: scale(1.12) rotate(4deg); } }
+  @keyframes sp-pulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(76,154,255,0)); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(76,154,255,.5)); } }
+  @keyframes sp-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(2px)} }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#f0f2f0;font-family:'Nunito','Noto Sans TC',system-ui,sans-serif;color:#1a261f;padding:52px 40px 90px;">
+  <div style="max-width:1080px;margin:0 auto;">
+
+    <!-- Header -->
+    <div style="margin-bottom:42px;">
+      <p style="margin:0 0 8px;font-size:11px;font-weight:800;letter-spacing:0.22em;color:#1f9e62;">SOFT PETRI · 柔光培養皿</p>
+      <h1 style="margin:0;font-size:38px;font-weight:700;font-family:'Fredoka',sans-serif;color:#1a261f;letter-spacing:-0.01em;">素材生成提示辭 · AI Image Prompts</h1>
+      <p style="margin:14px 0 0;font-size:14px;color:#5b7068;line-height:1.65;max-width:680px;">策略:<strong style="color:#1a261f;">AI 生成靜態關鍵素材，程式/CSS 負責動態</strong>。只生成 5 張透明 PNG 關鍵圖，再用 CSS 的 <code style="background:#e6ede7;padding:2px 6px;border-radius:5px;font-size:12px;">scale / opacity / box-shadow / filter / keyframes</code> 做出放芽、孢子擴散、菌落開花的動態。敘事:玩家初始<strong style="color:#1a261f;">放下嫩芽</strong>，最終整片場地<strong style="color:#1a261f;">開滿鮮花</strong>。</p>
+    </div>
+
+    <!-- ───── Live narrative demo ───── -->
+    <div style="margin-bottom:42px;padding:30px 28px 26px;background:#ffffff;border-radius:22px;border:1px solid #e3ebe3;box-shadow:0 8px 28px rgba(31,60,45,0.08);">
+      <div style="display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap;">
+        <div>
+          <h2 style="font-size:13px;font-weight:800;letter-spacing:0.16em;color:#1f9e62;margin:0 0 6px;">敘事動態 · 放芽 → 開滿鮮花</h2>
+          <p style="margin:0;font-size:13px;color:#6e827a;">靜態 PNG + CSS 過場。下方每格的背景與精靈圖層只是換 class，動態完全由程式驅動。</p>
+        </div>
+        <div style="display:inline-flex;align-items:center;gap:10px;padding:8px 16px;background:#f0f7f1;border-radius:999px;border:1px solid #d8ecdd;">
+          <span style="width:9px;height:9px;border-radius:999px;background:#2bb673;box-shadow:0 0 8px rgba(43,182,115,.6);"></span>
+          <span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#1a261f;min-width:84px;">{{ phaseLabel }}</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap;">
+        <!-- the board -->
+        <div style="display:grid;grid-template-columns:repeat(5,58px);grid-auto-rows:58px;gap:8px;padding:16px;background:#ffffff;border:1px solid #dfe7df;border-radius:22px;box-shadow:0 8px 20px rgba(31,60,45,0.07);">
+          <sc-for list="{{ demoCells }}" as="c" hint-placeholder-count="25">
+            <div style="{{ c.style }}">
+              <div style="{{ c.sprite }}"></div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- phase legend -->
+        <div style="display:grid;gap:14px;min-width:200px;">
+          <sc-for list="{{ phases }}" as="p" hint-placeholder-count="6">
+            <div style="{{ p.row }}">
+              <span style="{{ p.dot }}"></span>
+              <div>
+                <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#1a261f;">{{ p.name }}</div>
+                <div style="font-size:11px;color:#6e827a;">{{ p.desc }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── Global style anchor ───── -->
+    <div style="margin-bottom:42px;padding:28px;background:#1a261f;border-radius:22px;box-shadow:0 8px 28px rgba(31,60,45,0.12);">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:0.16em;color:#8ee0ad;margin:0 0 8px;">風格預設 + 負面詞 · LOCKED PRESET</h2>
+      <p style="margin:0 0 18px;font-size:13px;color:#a8c8b6;line-height:1.6;">出圖公式 = <strong style="color:#dff3e6;">主體描述 + 風格預設 + 負面詞</strong>。風格預設與負面詞這兩段固定不動，每張只換上方各卡的「主體描述」，5 張才會像同一套。</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:#0f1a15;border-radius:14px;padding:16px 18px;">
+          <div style="font-size:11px;font-weight:800;letter-spacing:0.1em;color:#6e9c80;margin-bottom:10px;">中文</div>
+          <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.7;color:#dff3e6;white-space:pre-wrap;">{{ anchorZh }}</pre>
+        </div>
+        <div style="background:#0f1a15;border-radius:14px;padding:16px 18px;">
+          <div style="font-size:11px;font-weight:800;letter-spacing:0.1em;color:#6e9c80;margin-bottom:10px;">ENGLISH</div>
+          <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.7;color:#dff3e6;white-space:pre-wrap;">{{ anchorEn }}</pre>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:#241016;border-radius:14px;padding:16px 18px;border:1px solid #3a1f26;">
+          <div style="font-size:11px;font-weight:800;letter-spacing:0.1em;color:#e89aa6;margin-bottom:10px;">負面詞 · 中文</div>
+          <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.7;color:#f3d9de;white-space:pre-wrap;">{{ negativeZh }}</pre>
+        </div>
+        <div style="background:#241016;border-radius:14px;padding:16px 18px;border:1px solid #3a1f26;">
+          <div style="font-size:11px;font-weight:800;letter-spacing:0.1em;color:#e89aa6;margin-bottom:10px;">NEGATIVE · EN</div>
+          <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.7;color:#f3d9de;white-space:pre-wrap;">{{ negativeEn }}</pre>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+        <sc-for list="{{ tips }}" as="t" hint-placeholder-count="4">
+          <div style="display:flex;gap:11px;align-items:start;background:#0f1a15;border-radius:12px;padding:13px 15px;">
+            <span style="width:7px;height:7px;border-radius:999px;background:#8ee0ad;flex:none;margin-top:6px;box-shadow:0 0 8px rgba(142,224,173,.6);"></span>
+            <div>
+              <div style="font-size:12px;font-weight:800;color:#dff3e6;margin-bottom:2px;">{{ t.k }}</div>
+              <div style="font-size:11.5px;color:#9fc4ad;line-height:1.5;">{{ t.v }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;">
+        <sc-for list="{{ palette }}" as="sw" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:9px;padding:7px 12px;background:#0f1a15;border-radius:999px;">
+            <span style="{{ sw.chip }}"></span>
+            <span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#dff3e6;">{{ sw.hex }}</span>
+            <span style="font-size:11px;color:#7fa890;">{{ sw.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- ───── 5 asset prompt cards ───── -->
+    <h2 style="font-size:13px;font-weight:800;letter-spacing:0.16em;color:#1f9e62;margin:0 0 18px;">五個關鍵素材 · 提示辭 + 接線</h2>
+    <div style="display:grid;gap:20px;">
+      <sc-for list="{{ assets }}" as="a" hint-placeholder-count="5">
+        <div style="background:#ffffff;border-radius:22px;border:1px solid #e3ebe3;box-shadow:0 4px 18px rgba(31,60,45,0.06);overflow:hidden;">
+          <!-- card header -->
+          <div style="display:flex;align-items:center;gap:14px;padding:18px 24px;border-bottom:1px solid #eef3ee;">
+            <span style="{{ a.indexChip }}">{{ a.index }}</span>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:#1a261f;">.{{ a.cls }}</span>
+                <span style="{{ a.tag }}">{{ a.tagText }}</span>
+              </div>
+              <div style="font-size:13px;color:#6e827a;margin-top:3px;">{{ a.role }}</div>
+            </div>
+            <code style="font-family:'Space Mono',monospace;font-size:11px;color:#8aa094;background:#f3f7f3;padding:5px 10px;border-radius:8px;white-space:nowrap;">{{ a.file }}</code>
+          </div>
+
+          <div style="display:grid;grid-template-columns:200px 1fr;gap:0;">
+            <!-- preview -->
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:26px 20px;background:#f6faf6;border-right:1px solid #eef3ee;">
+              <div style="{{ a.cellStyle }}">
+                <div style="{{ a.cellSprite }}"></div>
+              </div>
+              <div style="font-size:11px;color:#8aa094;font-family:'Space Mono',monospace;text-align:center;">{{ a.previewNote }}</div>
+            </div>
+
+            <!-- body -->
+            <div style="padding:22px 24px;display:grid;gap:18px;">
+              <!-- concept -->
+              <div>
+                <div style="font-size:11px;font-weight:800;letter-spacing:0.1em;color:#1f9e62;margin-bottom:9px;">視覺概念</div>
+                <ul style="margin:0;padding-left:18px;display:grid;gap:5px;">
+                  <sc-for list="{{ a.concept }}" as="pt" hint-placeholder-count="3">
+                    <li style="font-size:13px;color:#3c4f46;line-height:1.5;">{{ pt }}</li>
+                  </sc-for>
+                </ul>
+              </div>
+              <!-- prompts -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:#f0f7f1;border-radius:12px;padding:14px;border:1px solid #e0eee4;">
+                  <div style="font-size:10px;font-weight:800;letter-spacing:0.1em;color:#6e9c80;margin-bottom:8px;">主體描述 · 中文　<span style="color:#b6cabd;font-weight:600;">＋風格預設＋負面詞</span></div>
+                  <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.65;color:#1a261f;white-space:pre-wrap;">{{ a.zh }}</pre>
+                </div>
+                <div style="background:#f0f7f1;border-radius:12px;padding:14px;border:1px solid #e0eee4;">
+                  <div style="font-size:10px;font-weight:800;letter-spacing:0.1em;color:#6e9c80;margin-bottom:8px;">SUBJECT · EN　<span style="color:#b6cabd;font-weight:600;">+ preset + negative</span></div>
+                  <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11.5px;line-height:1.65;color:#1a261f;white-space:pre-wrap;">{{ a.en }}</pre>
+                </div>
+              </div>
+              <!-- css -->
+              <div style="background:#1a261f;border-radius:12px;padding:14px 16px;">
+                <div style="font-size:10px;font-weight:800;letter-spacing:0.1em;color:#8ee0ad;margin-bottom:8px;">CSS 動態作法 · {{ a.cls }}</div>
+                <pre style="margin:0;font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;color:#8ec8a0;white-space:pre-wrap;">{{ a.css }}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- ───── output spec ───── -->
+    <div style="margin-top:42px;padding:26px 28px;background:#ffffff;border-radius:22px;border:1px solid #e3ebe3;box-shadow:0 4px 16px rgba(31,60,45,0.05);">
+      <h2 style="font-size:13px;font-weight:800;letter-spacing:0.16em;color:#1f9e62;margin:0 0 14px;">輸出規格 · OUTPUT</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+        <sc-for list="{{ outputSpec }}" as="o" hint-placeholder-count="4">
+          <div style="background:#f6faf6;border-radius:12px;padding:15px 16px;">
+            <div style="font-size:12px;font-weight:800;color:#1a261f;margin-bottom:4px;">{{ o.k }}</div>
+            <div style="font-size:12px;color:#6e827a;line-height:1.55;">{{ o.v }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <p style="margin:16px 0 0;font-size:12px;color:#8aa094;line-height:1.6;">放置路徑 <code style="background:#f3f7f3;padding:2px 7px;border-radius:6px;font-family:'Space Mono',monospace;">theme-packs/soft-petri/assets/theme/</code>，由 <code style="background:#f3f7f3;padding:2px 7px;border-radius:6px;font-family:'Space Mono',monospace;">styles.css</code> 的 <code style="background:#f3f7f3;padding:2px 7px;border-radius:6px;font-family:'Space Mono',monospace;">.cell::after / ::before</code> 以 background-image 接入，HTML 結構與 class 名稱完全不變。</p>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080,&quot;height&quot;:1400}}">
+class Component extends DCLogic {
+  state = { tick: 0 };
+
+  componentDidMount() {
+    this._t = setInterval(() => {
+      this.setState(s => ({ tick: (s.tick + 1) % 6 }));
+    }, 1150);
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  renderVals() {
+    const A = "assets/";
+    const tick = this.state.tick;
+    const step = tick - 1; // -1 = empty board
+
+    // ── demo board (5x5, two seeds) ──
+    const seeds = [[1,1],[3,3]];
+    const cheby = (r,c) => Math.min(...seeds.map(([sr,sc]) => Math.max(Math.abs(r-sr), Math.abs(c-sc))));
+    const cellBase = "position:relative;border-radius:12px;transition:background-color .55s ease, box-shadow .55s ease, transform .55s cubic-bezier(.2,1.1,.3,1);";
+    const sprBase = "position:absolute;inset:-15%;background-position:center;background-repeat:no-repeat;pointer-events:none;transition:opacity .55s ease, transform .65s cubic-bezier(.2,1.1,.3,1);";
+    const demoCells = [];
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        const t = cheby(r,c);
+        let st;
+        if (step < 0) st = "empty";
+        else if (t === 0) st = step === 0 ? "selected" : "infected";
+        else if (step < t) st = "empty";
+        else if (step === t) st = "spreading";
+        else st = "infected";
+
+        let style = cellBase, sprite = sprBase;
+        if (st === "empty") {
+          style += "background:#e3ebe4;box-shadow:inset 0 -2px 0 rgba(0,0,0,.06);";
+          sprite += "opacity:0;transform:scale(.55);";
+        } else if (st === "selected") {
+          style += "background:#9fe0bb;box-shadow:inset 0 0 0 2px #2bb673;z-index:5;";
+          sprite += `background-image:url(${A}selected.png);background-size:contain;opacity:1;transform:scale(1);`;
+        } else if (st === "spreading") {
+          style += "background:#fff7dd;box-shadow:0 0 0 3px rgba(255,203,119,.5);transform:scale(1.06);z-index:6;";
+          sprite += `background-image:url(${A}spreading.png);background-size:contain;opacity:1;transform:scale(1.12);`;
+        } else { // infected
+          style += "background:#dcebdc;box-shadow:none;";
+          sprite += `background-image:url(${A}infected.png);background-size:118% 118%;opacity:1;transform:scale(1);`;
+        }
+        demoCells.push({ style, sprite });
+      }
+    }
+
+    const phaseNames = ["空盤", "放芽", "孢子擴散", "菌絲蔓延", "即將開滿", "開滿鮮花"];
+    const phaseLabel = phaseNames[tick];
+
+    const phaseList = [
+      { name: "空盤",     desc: "待感染的培養皿",   c: "#cdd8cf" },
+      { name: "放芽",     desc: "玩家放下源頭 .selected", c: "#2bb673" },
+      { name: "孢子擴散", desc: "花瓣噴發 .spreading",   c: "#ffb74d" },
+      { name: "菌絲蔓延", desc: "向鄰格逐步擴散",     c: "#ffb74d" },
+      { name: "即將開滿", desc: "最後一波 .spreading",   c: "#f3a9be" },
+      { name: "開滿鮮花", desc: "整格盛開 .infected",   c: "#2bb673" },
+    ];
+    const phases = phaseList.map((p, i) => {
+      const on = i === tick;
+      return {
+        name: p.name, desc: p.desc,
+        row: `display:flex;align-items:center;gap:11px;opacity:${on ? 1 : 0.45};transition:opacity .4s ease;`,
+        dot: `width:11px;height:11px;border-radius:999px;flex:none;background:${p.c};box-shadow:${on ? "0 0 10px " + p.c : "none"};transition:box-shadow .4s ease;`,
+      };
+    });
+
+    // ── style preset (locked, append to every subject) ──
+    const anchorZh = "休閒消除手遊素材;現代扁平 3D / 向量質感，平滑柔和的體積光與輕微 AO 環境遮蔽，無黑色描邊，乾淨圓潤造型。光源來自正上方偏柔，帶細緻光澤高光，明亮療癒、有觸感。單一主體置中、約 14% 安全留白、不裁切。去背、純透明背景，不烤入投影、無地面。256×256、邊緣銳利乾淨。";
+    const anchorEn = "Casual match-3 mobile game asset; modern flat-3D / vector look, smooth soft volumetric shading + subtle ambient occlusion, NO black outlines, clean rounded shapes. Soft light from directly above, delicate glossy highlights, bright, cozy, tactile. Single centered subject, ~14% safe padding, no cropping. Cut out on a fully transparent background, no baked drop shadow, no ground plane. 256x256, crisp clean edges.";
+
+    const negativeZh = "避免:文字、浮水印、簽名、外框 / 邊框方塊、寫實照片、黑色粗描邊、雜亂堆疊、混濁髒色、棋盤格背景、烤入陰影、廉價塑膠 3D 感、多餘物件。";
+    const negativeEn = "Negative: text, watermark, signature, border / frame box, photorealistic, thick black outlines, cluttered, muddy colors, checkerboard background, baked-in shadow, cheap plastic 3D, extra objects.";
+
+    const tips = [
+      { k: "鎖定預設 + seed", v: "每張只改『主體描述』，風格預設、負面詞、seed 全部固定 —— 5 張才會像同一套。" },
+      { k: "先生大再縮小", v: "用 1024² 生成、確認去背乾淨後再縮到 256，邊緣更俐落。" },
+      { k: "明確要求透明", v: "提示與輸出都指定 PNG / transparent，避免殘留白底或棋盤格。" },
+      { k: "依用途調留白", v: "精靈類(芽 / 花瓣 / 木框)留 14% 邊；鋪滿類(花床)要 full-bleed 滿版圓角。" },
+    ];
+
+    const palette = [
+      { hex: "#7cc242", name: "嫩綠", chip: "width:16px;height:16px;border-radius:5px;background:#7cc242;" },
+      { hex: "#4e9c3a", name: "苔綠", chip: "width:16px;height:16px;border-radius:5px;background:#4e9c3a;" },
+      { hex: "#f6ecc9", name: "奶油", chip: "width:16px;height:16px;border-radius:5px;background:#f6ecc9;" },
+      { hex: "#f3a9be", name: "櫻粉", chip: "width:16px;height:16px;border-radius:5px;background:#f3a9be;" },
+      { hex: "#f6b73c", name: "花心黃", chip: "width:16px;height:16px;border-radius:5px;background:#f6b73c;" },
+    ];
+
+    // ── preview cell helpers ──
+    const pCell = "position:relative;width:96px;height:96px;border-radius:16px;";
+    const pSpr = "position:absolute;inset:-15%;background-position:center;background-repeat:no-repeat;pointer-events:none;";
+    const idxChip = "display:grid;place-items:center;width:30px;height:30px;border-radius:9px;flex:none;font-family:'Fredoka',sans-serif;font-weight:700;font-size:15px;color:#06281a;background:linear-gradient(180deg,#3ed089,#2bb673);";
+
+    const assets = [
+      {
+        index: "1", cls: "selected", file: "selected.png",
+        tagText: "玩家放置", tag: "font-size:10px;font-weight:800;color:#06281a;background:#9fe0bb;padding:3px 9px;border-radius:999px;",
+        role: "玩家在格上放下的「源頭」—— 一株剛冒出的嫩芽。",
+        previewNote: ".cell.selected\n#9fe0bb 底",
+        cellStyle: pCell + "background:#9fe0bb;box-shadow:inset 0 0 0 2px #2bb673;",
+        cellSprite: pSpr + `background-image:url(${A}selected.png);background-size:contain;animation:sp-breathe 2.6s ease-in-out infinite;`,
+        indexChip: idxChip,
+        concept: [
+          "單一、置中的可愛嫩芽:一小段莖上對稱展開兩片飽滿圓潤的綠葉。",
+          "葉面有柔亮高光，生機盎然，象徵「剛種下、即將擴散」。",
+          "周圍乾淨透明，方便疊在任何底色格子上。",
+        ],
+        zh: "主體:一株可愛的小嫩芽 —— 一段短而翡翠綠的莖，對稱長出兩片飽滿圓潤、略呈心形的嫩葉，葉面一點露珠高光;主體後方襯一圈極淡的柔綠光暈，讀作『剛種下的活躍源頭』。佔畫面約 55%，置中。",
+        en: "Subject: one cute sprout — a short emerald stem with two plump rounded, slightly heart-shaped young leaves and a tiny dew highlight; a very faint soft-green glow halo behind it so it reads as a freshly placed, active source. Fills ~55% of the frame, centered.",
+        css: ".cell.selected::after {\n  background: url(selected.png) center/contain no-repeat;\n  animation: pop-in 320ms cubic-bezier(.2,1.2,.3,1);\n}\n/* 放置後輕微呼吸 + 柔光脈動 */\n.cell.selected { animation: glow 2.4s ease-in-out infinite; }",
+      },
+      {
+        index: "2", cls: "spreading", file: "spreading.png",
+        tagText: "感染波", tag: "font-size:10px;font-weight:800;color:#7a4a12;background:#ffe3a8;padding:3px 9px;border-radius:999px;",
+        role: "感染向鄰格擴散的瞬間 —— 一圈噴發的櫻花花瓣 / 孢子。",
+        previewNote: ".cell.spreading\n#fff7dd 底",
+        cellStyle: pCell + "background:#fff7dd;box-shadow:0 0 0 3px rgba(255,203,119,.5);",
+        cellSprite: pSpr + `background-image:url(${A}spreading.png);background-size:contain;animation:sp-petal 1.4s ease-out infinite;`,
+        indexChip: idxChip,
+        concept: [
+          "由中心向外噴發、由密到疏飄散的柔粉櫻花花瓣。",
+          "輕盈通透、帶動態方向感，中央留白(底下的格子要透出來)。",
+          "只是一瞬的過場特效，疊在格子上播一次。",
+        ],
+        zh: "主體:一圈由中央空心向外炸開的櫻花花瓣，粉色與白色交錯、大小不一，靠中心密、向外緣漸疏，帶速度方向感與少許閃亮小點，輕盈通透;正中央保持空透(底下格子要透出來)。",
+        en: "Subject: a ring of cherry-blossom petals bursting outward from a hollow center, mixed pink and white, varied sizes, dense near the center and sparse toward the edges, with directional speed and a few tiny sparkles, light and translucent; keep the very center empty so the cell shows through.",
+        css: ".cell.spreading::after {\n  background: url(spreading.png) center/contain no-repeat;\n  animation: petal-spread 740ms ease-out both;\n}\n/* 鄰格依距離 stagger delay，做出一波波蔓延 */\n.cell.spreading { transform: scale(1.04); }",
+      },
+      {
+        index: "3", cls: "infected", file: "infected.png",
+        tagText: "已感染", tag: "font-size:10px;font-weight:800;color:#06281a;background:#bfe9cf;padding:3px 9px;border-radius:999px;",
+        role: "感染完成 —— 整格開滿鮮花，這就是「開滿鮮花」的終局。",
+        previewNote: ".cell.infected\n#dcebdc 底",
+        cellStyle: pCell + "background:#dcebdc;",
+        cellSprite: "position:absolute;inset:-9%;background-position:center;background-repeat:no-repeat;pointer-events:none;" + `background-image:url(${A}infected.png);background-size:118% 118%;`,
+        indexChip: idxChip,
+        concept: [
+          "一整格鋪滿盛開花朵的花床:粉與奶油色雛菊交錯，夾雜綠葉與花苞。",
+          "由邊到邊填滿整個方形畫面，蓬鬆茂密，微俯視角。",
+          "是 .selected 與 .spreading 的最終結果，整片場地的視覺主體。",
+        ],
+        zh: "主體:一塊『滿版、四角圓潤』的花床坐墊，鮮花鋪滿到邊 —— 以粉色與奶油色雛菊(黃花心)為主，錯落點綴含苞花蕾與飽滿綠葉，俯視均勻分布、蓬鬆柔軟。要 full-bleed 滿版、邊緣柔和圓角，不留透明邊。※ 此圖打破上方『14% 留白』規則。",
+        en: "Subject: a FULL-BLEED flower-bed cushion with softly rounded corners, blooms filling to every edge — mostly pink and cream daisies with yellow centers, scattered buds and plump green leaves, even top-down distribution, soft and pillowy. Full-bleed with rounded corners, no transparent margin. (Overrides the 14% padding rule above.)",
+        css: ".cell.infected::after {\n  background: url(infected.png) center/118% 118% no-repeat;\n}\n/* 開花瞬間由下彈入 + 投影 */\n.cell.blooming::before {\n  animation: row-bloom 760ms ease-out both;\n  filter: drop-shadow(0 8px 12px rgba(73,92,49,.2));\n}",
+      },
+      {
+        index: "4", cls: "requiredSeed", file: "required-seed.png",
+        tagText: "必放源", tag: "font-size:10px;font-weight:800;color:#1c4a8a;background:#d6e8ff;padding:3px 9px;border-radius:999px;",
+        role: "關卡指定「一定要放源頭」的格 —— 花床中央一枚藍徽提示。",
+        previewNote: ".cell.requiredSeed\n#d6e8ff 底",
+        cellStyle: pCell + "background:#d6e8ff;box-shadow:inset 0 0 0 2px #4c9aff;",
+        cellSprite: "position:absolute;inset:-9%;background-position:center;background-repeat:no-repeat;pointer-events:none;" + `background-image:url(${A}required-seed.png);background-size:112% 112%;`,
+        indexChip: idxChip,
+        concept: [
+          "與「開花格」相同的盛開花床作底。",
+          "正中央疊上一枚光澤感藍色圓徽，內含白色小花剪影。",
+          "藍色明確區隔於綠色感染色，玩家一眼看出此格非放不可。",
+        ],
+        zh: "主體:與『開花格』完全相同的滿版花床作底;正中央漂浮一枚乾淨、有光澤的藍色圓形徽章，徽章內為簡潔的白色嫩芽符號，徽章下方帶一點柔和接觸光暈。藍徽要單一、清楚、明顯有別於四周花叢。同樣 full-bleed。",
+        en: "Subject: the SAME full-bleed flower bed as the bloom tile; one clean glossy blue circular badge floating at the exact center, showing a simple white sprout glyph, with a soft contact glow beneath it. The blue badge must be single, clear, and clearly distinct from the surrounding blooms. Full-bleed.",
+        css: ".cell.requiredSeed::after {\n  background: url(required-seed.png) center/112% 112% no-repeat;\n}\n/* 未放置前藍徽緩慢呼吸 + 發光提示 */\n.required-badge { animation: pulse 2s ease-in-out infinite; }",
+      },
+      {
+        index: "5", cls: "play-blockedSeed", file: "blocked.png",
+        tagText: "禁放格", tag: "font-size:10px;font-weight:800;color:#9a3540;background:#ffe1e4;padding:3px 9px;border-radius:999px;",
+        role: "不可放置源頭的格 —— 一圈方形木柵欄圍籬。",
+        previewNote: ".cell.play-blockedSeed\n#fff1f2 底",
+        cellStyle: pCell + "background:#fff1f2;border:2px solid #ff5d6c;",
+        cellSprite: "position:absolute;inset:-17%;background-position:center;background-repeat:no-repeat;pointer-events:none;" + `background-image:url(${A}blocked.png);background-size:contain;`,
+        indexChip: idxChip,
+        concept: [
+          "一圈方形鄉村木柵欄框:四邊圓潤原木橫桿 + 四角木樁。",
+          "木紋與柔和高光，角落冒出幾片小綠葉，中央完全透空。",
+          "中央留空讓底下紅色禁放格透出，木框=保護/阻擋語意。",
+        ],
+        zh: "主體:一圈方形的保護木柵欄框，由平滑圓潤的淺色原木橫桿與四角木樁構成，柔和木紋與光澤，角落冒出幾片小綠葉;正中央完全空透(像一扇窗)，不要任何填充，整體讀作『此格被圍住、不可放置』。木框佔滿邊緣、中央留 60% 空透。",
+        en: "Subject: a square protective fence frame of smooth rounded light-wood logs with four corner posts, soft wood grain and highlights, a few small green leaves at the corners; the center completely empty and transparent (like a window), no fill, reading as a fenced-off, no-placement plot. Frame hugs the edges, ~60% empty center.",
+        css: ".cell.play-blockedSeed::before {\n  background: url(blocked.png) center/contain no-repeat;\n  inset: -17%;\n}\n/* 玩家誤點時抖動 + 紅暈警示 */\n.board-stage.limit-shake .grid {\n  animation: board-limit-shake 260ms ease-out both;\n}",
+      },
+    ];
+
+    const outputSpec = [
+      { k: "尺寸 / 格式", v: "256 × 256 px · PNG · 透明背景(alpha)" },
+      { k: "張數", v: "5 張關鍵素材，其餘動態交給 CSS" },
+      { k: "命名", v: "selected · spreading · infected · required-seed · blocked" },
+      { k: "留白", v: "精靈圖留邊以便 ::after inset 放大溢出格子" },
+    ];
+
+    return { demoCells, phaseLabel, phases, anchorZh, anchorEn, negativeZh, negativeEn, tips, palette, assets, outputSpec };
+  }
+}
+</script>
+</body>
+</html>

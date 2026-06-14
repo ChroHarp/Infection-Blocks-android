@@ -1,4 +1,9 @@
 import "./styles.css";
+import blockedAssetUrl from "./assets/theme/blocked.png";
+import infectedAssetUrl from "./assets/theme/infected.png";
+import requiredSeedAssetUrl from "./assets/theme/required-seed.png";
+import selectedAssetUrl from "./assets/theme/selected.png";
+import spreadingAssetUrl from "./assets/theme/spreading.png";
 import { coordKey, uniqueCoords } from "./domain/coords";
 import { maxPassingSeeds, runInfection } from "./domain/engine";
 import type { CellCoord, CellKind, Level, LevelPack, LevelPackStatus, Locale } from "./domain/types";
@@ -50,6 +55,7 @@ if (!appRoot) {
 }
 
 const root = appRoot;
+const themeAssetUrls = [selectedAssetUrl, spreadingAssetUrl, infectedAssetUrl, requiredSeedAssetUrl, blockedAssetUrl];
 
 const searchParams = new URLSearchParams(window.location.search);
 const editorBuildEnabled = import.meta.env.VITE_ENABLE_EDITOR !== "false";
@@ -81,6 +87,15 @@ const state: AppState = {
   lastStars: 0,
   progress: loadProgress()
 };
+
+function preloadThemeAssets(): void {
+  for (const assetUrl of themeAssetUrls) {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = assetUrl;
+    void image.decode?.().catch(() => undefined);
+  }
+}
 
 function render(): void {
   root.innerHTML = `
@@ -460,7 +475,10 @@ function renderGrid(mode: "editor" | "play"): string {
           data-cell="${row},${col}"
           type="button"
           aria-label="${row + 1},${col + 1}"
-        ></button>
+        >
+          ${spreading ? `<span class="cell-wave" aria-hidden="true"></span>` : ""}
+          ${blooming ? `<span class="cell-bloom" aria-hidden="true"></span>` : ""}
+        </button>
       `);
     }
   }
@@ -695,7 +713,8 @@ async function startInfection(): Promise<void> {
   if (state.isSpreading || state.isFinalizing || state.seeds.length === 0) return;
 
   const result = runInfection(state.level, state.seeds);
-  state.resultInfected = new Set(state.seeds.map(coordKey));
+  const seedKeys = state.seeds.map(coordKey);
+  state.resultInfected = new Set();
   state.waveCells = new Set();
   state.finishBloomCells = new Set();
   state.lastStars = 0;
@@ -711,6 +730,12 @@ async function startInfection(): Promise<void> {
 
   state.isSpreading = true;
   state.messageKey = "spreading";
+  state.waveCells = new Set(seedKeys);
+  render();
+
+  await wait(280);
+  state.resultInfected = new Set(seedKeys);
+  state.waveCells = new Set();
   render();
 
   for (const wave of result.waves) {
@@ -768,10 +793,6 @@ async function showFailureAfterDim(): Promise<void> {
   state.failureOpen = false;
   render();
   await wait(500);
-  state.failureDimming = true;
-  render();
-  await wait(1000);
-  state.failureDimming = false;
   state.isFinalizing = false;
   state.failureOpen = true;
   render();
@@ -1207,4 +1228,5 @@ window.addEventListener("resize", () => {
   resizeTimer = window.setTimeout(render, 120);
 });
 
+preloadThemeAssets();
 render();
