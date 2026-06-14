@@ -524,7 +524,7 @@ h2 {
 
 .modal-backdrop {
   position: fixed;
-  z-index: 20;
+  z-index: 5000;
   inset: 0;
   display: grid;
   place-items: center;
@@ -830,6 +830,23 @@ h2 {
   }
 }
 
+@keyframes flower-grow-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10%) scale(0.68);
+  }
+
+  58% {
+    opacity: 1;
+    transform: translateY(-2%) scale(1.06);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop,
   .result-dialog,
@@ -837,6 +854,7 @@ h2 {
   .result-burst span,
   .failure-mark,
   .cell.selected::after,
+  .cell.growing::after,
   .cell-wave,
   .cell-bloom,
   .board-stage.limit-shake .grid {
@@ -937,6 +955,7 @@ h2 {
 
 .cell {
   position: relative;
+  z-index: var(--cell-layer, 0);
   aspect-ratio: 1;
   min-width: 0;
   min-height: 0;
@@ -1014,13 +1033,19 @@ h2 {
 .cell.infected::after {
   position: absolute;
   z-index: 1;
-  inset: -11%;
+  inset: -52% -26% -7%;
   pointer-events: none;
-  background: url("./assets/theme/infected.png") center / 112% 112% no-repeat;
+  background: url("./assets/theme/infected.png") center bottom / contain no-repeat;
   content: "";
+  transform-origin: 50% 94%;
+}
+
+.cell.growing::after {
+  animation: flower-grow-in 420ms cubic-bezier(0.18, 0.9, 0.22, 1.18) both;
 }
 
 .cell.spreading {
+  z-index: calc(var(--cell-layer, 0) + 1000);
   border-color: transparent;
   background: #fff7dd;
   box-shadow: 0 0 0 3px rgba(255, 203, 119, 0.42);
@@ -1032,7 +1057,7 @@ h2 {
 }
 
 .cell.blooming {
-  z-index: 40;
+  z-index: calc(var(--cell-layer, 0) + 1200);
 }
 
 .cell.blooming::before {
@@ -1081,9 +1106,13 @@ h2 {
 
 .cell.requiredSeed.selected.infected::after,
 .cell.play-requiredSeed.selected.infected::after {
-  inset: -11%;
-  background: url("./assets/theme/infected.png") center / 112% 112% no-repeat;
-  animation: none;
+  inset: -52% -26% -7%;
+  background: url("./assets/theme/infected.png") center bottom / contain no-repeat;
+}
+
+.cell.requiredSeed.selected.infected.growing::after,
+.cell.play-requiredSeed.selected.infected.growing::after {
+  animation: flower-grow-in 420ms cubic-bezier(0.18, 0.9, 0.22, 1.18) both;
 }
 
 .cell.play-blockedSeed.infected {

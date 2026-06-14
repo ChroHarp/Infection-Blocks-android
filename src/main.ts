@@ -37,6 +37,7 @@ interface AppState {
   jsonText: string;
   resultInfected: Set<string>;
   waveCells: Set<string>;
+  growingCells: Set<string>;
   finishBloomCells: Set<string>;
   isSpreading: boolean;
   isFinalizing: boolean;
@@ -77,6 +78,7 @@ const state: AppState = {
   jsonText: JSON.stringify(initialLevel, null, 2),
   resultInfected: new Set(),
   waveCells: new Set(),
+  growingCells: new Set(),
   finishBloomCells: new Set(),
   isSpreading: false,
   isFinalizing: false,
@@ -466,12 +468,15 @@ function renderGrid(mode: "editor" | "play"): string {
       const selected = state.seeds.some((coord) => coordKey(coord) === key);
       const infected = state.resultInfected.has(key);
       const spreading = state.waveCells.has(key);
+      const growing = state.growingCells.has(key);
       const blooming = state.finishBloomCells.has(key);
       const playKind = mode === "play" ? `play-${kind}` : "";
+      const layer = row * state.level.cols + col;
 
       cells.push(`
         <button
-          class="cell ${kind} ${playKind} ${selected ? "selected" : ""} ${infected ? "infected" : ""} ${spreading ? "spreading" : ""} ${blooming ? "blooming" : ""}"
+          class="cell ${kind} ${playKind} ${selected ? "selected" : ""} ${infected ? "infected" : ""} ${spreading ? "spreading" : ""} ${growing ? "growing" : ""} ${blooming ? "blooming" : ""}"
+          style="--cell-layer:${layer}"
           data-cell="${row},${col}"
           type="button"
           aria-label="${row + 1},${col + 1}"
@@ -690,6 +695,7 @@ function toggleSeed(row: number, col: number): void {
 
   state.resultInfected = new Set();
   state.waveCells = new Set();
+  state.growingCells = new Set();
   state.finishBloomCells = new Set();
   state.lastStars = 0;
   state.failureOpen = false;
@@ -716,6 +722,7 @@ async function startInfection(): Promise<void> {
   const seedKeys = state.seeds.map(coordKey);
   state.resultInfected = new Set();
   state.waveCells = new Set();
+  state.growingCells = new Set();
   state.finishBloomCells = new Set();
   state.lastStars = 0;
   state.victoryOpen = false;
@@ -735,21 +742,31 @@ async function startInfection(): Promise<void> {
 
   await wait(280);
   state.resultInfected = new Set(seedKeys);
+  state.growingCells = new Set(seedKeys);
   state.waveCells = new Set();
   render();
+  await wait(180);
 
   for (const wave of result.waves) {
+    const waveKeys = wave.map(coordKey);
+    await wait(120);
+    state.growingCells = new Set();
+    state.waveCells = new Set(waveKeys);
+    render();
     await wait(280);
-    state.waveCells = new Set(wave.map(coordKey));
+    state.waveCells = new Set();
+    state.growingCells = new Set(waveKeys);
     for (const coord of wave) {
       state.resultInfected.add(coordKey(coord));
     }
     render();
+    await wait(180);
   }
 
   await wait(260);
   state.isSpreading = false;
   state.waveCells = new Set();
+  state.growingCells = new Set();
   state.resultInfected = result.infected;
   state.lastStars = result.stars;
   state.messageKey = result.completed ? "completed" : result.failureReason ?? "failed";
@@ -789,6 +806,7 @@ async function showFailureAfterDim(): Promise<void> {
   state.isSpreading = false;
   state.isFinalizing = true;
   state.waveCells = new Set();
+  state.growingCells = new Set();
   state.finishBloomCells = new Set();
   state.failureOpen = false;
   render();
@@ -839,6 +857,7 @@ function resetPlayState(): void {
 function clearRunState(): void {
   state.resultInfected = new Set();
   state.waveCells = new Set();
+  state.growingCells = new Set();
   state.finishBloomCells = new Set();
   state.lastStars = 0;
   state.failureOpen = false;
