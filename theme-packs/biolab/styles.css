@@ -774,6 +774,23 @@ h2 {
   }
 }
 
+@keyframes bio-spread-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.68) rotate(-5deg);
+  }
+
+  42% {
+    opacity: 1;
+    transform: scale(1.08) rotate(0);
+  }
+
+  100% {
+    opacity: 0.18;
+    transform: scale(1.36) rotate(5deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop,
   .result-dialog,
@@ -781,6 +798,8 @@ h2 {
   .result-burst span,
   .failure-mark,
   .cell.spreading,
+  .cell.spreading::after,
+  .cell.blooming::before,
   .board-stage.limit-shake .grid {
     animation: none;
   }
@@ -920,17 +939,16 @@ h2 {
 .cell.play-blockedSeed {
   border: 2px solid var(--danger);
   background-color: #f3dede;
-  background-image: repeating-linear-gradient(45deg, rgba(255, 107, 107, 0.3) 0 4px, transparent 4px 8px);
+  background-image: none;
   cursor: not-allowed;
 }
 
-.cell.selected::after,
-.cell.infected::after {
+.cell.play-blockedSeed::before {
   position: absolute;
-  inset: 27%;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 12px rgba(94, 243, 138, 1);
+  z-index: 3;
+  inset: -17%;
+  pointer-events: none;
+  background: url("./assets/theme/blocked.png") center / contain no-repeat;
   content: "";
 }
 
@@ -941,11 +959,29 @@ h2 {
     0 0 14px rgba(94, 243, 138, 0.45);
 }
 
+.cell.selected::after {
+  position: absolute;
+  z-index: 2;
+  inset: -10%;
+  pointer-events: none;
+  background: url("./assets/theme/selected.png") center / contain no-repeat;
+  content: "";
+}
+
 .cell.infected {
   background: var(--surface);
   box-shadow:
     0 0 0 1px rgba(94, 243, 138, 0.35),
     0 0 12px rgba(94, 243, 138, 0.22);
+}
+
+.cell.infected::after {
+  position: absolute;
+  z-index: 1;
+  inset: -4%;
+  pointer-events: none;
+  background: url("./assets/theme/infected.png") center / contain no-repeat;
+  content: "";
 }
 
 .cell.spreading {
@@ -958,19 +994,52 @@ h2 {
   animation: bio-pulse 1.6s ease-in-out infinite;
 }
 
+.cell.spreading::after {
+  position: absolute;
+  z-index: 4;
+  inset: -24%;
+  pointer-events: none;
+  background: url("./assets/theme/spreading.png") center / contain no-repeat;
+  content: "";
+  filter: drop-shadow(0 0 12px rgba(94, 243, 138, 0.5));
+  animation: bio-spread-pop 740ms ease-out both;
+}
+
 .cell.requiredSeed.selected::after {
-  background: var(--blue);
-  box-shadow: 0 0 12px rgba(78, 168, 255, 0.9);
+  inset: -10%;
+  background: url("./assets/theme/required-seed.png") center / contain no-repeat;
+  box-shadow: none;
 }
 
 .cell.play-requiredSeed.selected::after {
-  background: var(--accent);
-  box-shadow: 0 0 12px rgba(94, 243, 138, 0.8);
+  inset: -10%;
+  background: url("./assets/theme/required-seed.png") center / contain no-repeat;
+  box-shadow: none;
 }
 
 .cell.play-blockedSeed.infected {
   background-color: var(--surface);
-  background-image: repeating-linear-gradient(45deg, rgba(255, 107, 107, 0.22) 0 4px, transparent 4px 8px);
+  background-image: none;
+}
+
+.cell.play-blockedSeed.infected::after {
+  inset: -4%;
+  background: url("./assets/theme/infected.png") center / contain no-repeat;
+}
+
+.cell.blooming {
+  z-index: 40;
+}
+
+.cell.blooming::before {
+  position: absolute;
+  z-index: 45;
+  inset: -40%;
+  pointer-events: none;
+  background: url("./assets/theme/spreading.png") center / contain no-repeat;
+  content: "";
+  filter: drop-shadow(0 0 16px rgba(94, 243, 138, 0.55));
+  animation: bio-spread-pop 760ms ease-out both;
 }
 
 @media (max-width: 820px) {
