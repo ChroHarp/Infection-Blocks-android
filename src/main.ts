@@ -7,7 +7,7 @@ import spreadingAssetUrl from "./assets/theme/spreading.png";
 import { coordKey, uniqueCoords } from "./domain/coords";
 import { maxPassingSeeds, runInfection } from "./domain/engine";
 import type { CellCoord, CellKind, Level, LevelPack, LevelPackStatus, Locale } from "./domain/types";
-import { sampleLevels } from "./data/sampleLevels";
+import { sampleLevelPacks, sampleLevels } from "./data/sampleLevels";
 import { t } from "./i18n";
 import {
   loadEditorIndex,
@@ -23,6 +23,9 @@ import {
 
 type Screen = "packages" | "levels" | "play" | "editor";
 type EditorTool = CellKind;
+
+const COMPLETION_BLOOM_DURATION_MS = 1000;
+const COMPLETION_BLOOM_OVERLAP_MS = 150;
 
 interface AppState {
   locale: Locale;
@@ -141,6 +144,11 @@ function renderDevNav(): string {
   `;
 }
 
+function displayTitle(titleKey: string, fallback: string): string {
+  const translated = t(state.locale, titleKey);
+  return translated === titleKey && titleKey.includes(".") ? fallback : translated;
+}
+
 function renderPackageSelect(): string {
   const completed = state.levels.filter((level) => state.progress[level.id]?.completed).length;
   const totalStars = state.levels.reduce((sum, level) => sum + (state.progress[level.id]?.bestStars ?? 0), 0);
@@ -178,7 +186,7 @@ function renderPackageCard(pack: LevelPack): string {
     <button class="package-card ${unlocked ? "" : "locked"}" data-pack-id="${pack.id}" ${unlocked ? "" : "disabled"}>
       <div class="package-card-main">
         <span>${t(state.locale, "package")}</span>
-        <strong>${pack.id}</strong>
+        <strong>${displayTitle(pack.titleKey, pack.id)}</strong>
       </div>
       <div class="package-card-stats">
         <span class="pill ${paid ? "paid" : "free"}">${t(state.locale, paid ? "paidLevel" : "freeLevel")}</span>
@@ -187,7 +195,7 @@ function renderPackageCard(pack: LevelPack): string {
       </div>
       <div class="package-card-continue">
         <span>${t(state.locale, completed > 0 ? "continueLevel" : "playLevel")}</span>
-        <strong>${nextLevel?.id ?? pack.id}</strong>
+        <strong>${nextLevel ? displayTitle(nextLevel.titleKey, nextLevel.id) : displayTitle(pack.titleKey, pack.id)}</strong>
       </div>
     </button>
   `;
@@ -205,7 +213,7 @@ function renderLevelSelect(): string {
         <button class="ghost-button" data-action="back-packages">${t(state.locale, "backToPackages")}</button>
         <div>
           <span>${t(state.locale, "package")}</span>
-          <strong>${pack.id}</strong>
+          <strong>${displayTitle(pack.titleKey, pack.id)}</strong>
         </div>
         <button class="primary-action" data-action="continue-package">${t(state.locale, "continueLevel")}</button>
       </header>
@@ -224,7 +232,7 @@ function renderPackageSection(pack: LevelPack): string {
       <header class="package-header">
         <div>
           <span>${t(state.locale, "package")}</span>
-          <strong>${pack.id}</strong>
+          <strong>${displayTitle(pack.titleKey, pack.id)}</strong>
         </div>
         <div class="package-meta">
           <span class="pill ${paid ? "paid" : "free"}">${t(state.locale, paid ? "paidLevel" : "freeLevel")}</span>
@@ -243,23 +251,19 @@ function renderLevelCard(level: Level, index: number): string {
   const progress = state.progress[level.id];
   const unlocked = isLevelUnlocked(index);
   const selected = index === state.levelIndex;
-  const label = progress?.completed ? `${t(state.locale, "best")} ${"★".repeat(progress.bestStars)}` : t(state.locale, "notCleared");
+  const stars = progress?.completed ? `${"★".repeat(progress.bestStars)}${"☆".repeat(3 - progress.bestStars)}` : "☆☆☆";
 
   return `
     <button class="level-card ${selected ? "selected" : ""} ${unlocked ? "" : "locked"}" data-level-index="${index}" ${unlocked ? "" : "disabled"}>
-      <div class="level-card-main">
+      <div class="level-card-header">
         <span class="level-number">${String(index + 1).padStart(2, "0")}</span>
-        <div>
-          <strong>${level.id}</strong>
-          <span>${level.rows}x${level.cols} · ${t(state.locale, "seedLimit")} ${maxPassingSeeds(level)}</span>
-        </div>
-      </div>
-      <div class="level-card-meta">
-        <span class="pill ${level.free ? "free" : "paid"}">${t(state.locale, level.free ? "freeLevel" : "paidLevel")}</span>
-        <span>${unlocked ? label : t(state.locale, "locked")}</span>
+        <span class="level-stars ${progress?.completed ? "earned" : "empty"}">${unlocked ? stars : t(state.locale, "locked")}</span>
       </div>
       <div class="mini-board-frame">
         ${renderMiniBoard(level)}
+      </div>
+      <div class="level-card-footer">
+        <strong>${displayTitle(level.titleKey, level.id)}</strong>
       </div>
     </button>
   `;
@@ -268,7 +272,9 @@ function renderLevelCard(level: Level, index: number): string {
 function renderMiniBoard(level: Level): string {
   const cells: string[] = [];
   const maxDimension = Math.max(level.rows, level.cols);
-  const miniCellSize = Math.max(7, Math.floor((112 - (maxDimension - 1) * 2) / maxDimension));
+  const miniBoardSize = 102;
+  const miniBoardGap = 4;
+  const miniCellSize = Math.max(7, Math.floor((miniBoardSize - (maxDimension - 1) * miniBoardGap) / maxDimension));
 
   for (let row = 0; row < level.rows; row += 1) {
     for (let col = 0; col < level.cols; col += 1) {
@@ -287,13 +293,18 @@ function groupedLevels(): LevelPack[] {
       .filter((level) => level.packId === packId)
       .sort((a, b) => a.order - b.order);
     const paid = levels.some((level) => !level.free);
+    const sourcePack = sampleLevelPacks.find((pack) => pack.id === packId);
 
     return {
       id: packId,
-      order: index + 1,
-      titleKey: `pack.${packId.replaceAll("-", "")}`,
-      access: paid ? "paid" : "free",
-      purchaseId: paid ? "unlock_full_game" : undefined,
+      order: sourcePack?.order ?? index + 1,
+      titleKey: sourcePack?.titleKey ?? `pack.${packId.replaceAll("-", "")}`,
+      access: sourcePack?.access ?? (paid ? "paid" : "free"),
+      status: sourcePack?.status,
+      updatedAt: sourcePack?.updatedAt,
+      publishedAt: sourcePack?.publishedAt,
+      purchaseId: sourcePack?.purchaseId ?? (paid ? "unlock_full_game" : undefined),
+      unlockAfterPackId: sourcePack?.unlockAfterPackId,
       levels
     };
   });
@@ -308,7 +319,7 @@ function renderPlayScreen(): string {
         <button class="ghost-button" data-action="back-levels">${t(state.locale, "backToLevels")}</button>
         <div>
           <span>${t(state.locale, "level")} ${state.levelIndex + 1}</span>
-          <strong>${state.level.id}</strong>
+          <strong>${displayTitle(state.level.titleKey, state.level.id)}</strong>
         </div>
         <div class="status-stars">${progress?.completed ? "★".repeat(progress.bestStars) : "☆☆☆"}</div>
       </header>
@@ -472,11 +483,12 @@ function renderGrid(mode: "editor" | "play"): string {
       const blooming = state.finishBloomCells.has(key);
       const playKind = mode === "play" ? `play-${kind}` : "";
       const layer = row * state.level.cols + col;
+      const bloomDelay = blooming ? row * COMPLETION_BLOOM_OVERLAP_MS : 0;
 
       cells.push(`
         <button
           class="cell ${kind} ${playKind} ${selected ? "selected" : ""} ${infected ? "infected" : ""} ${spreading ? "spreading" : ""} ${growing ? "growing" : ""} ${blooming ? "blooming" : ""}"
-          style="--cell-layer:${layer}"
+          style="--flower-layer:${layer};--bloom-delay:${bloomDelay}ms"
           data-cell="${row},${col}"
           type="button"
           aria-label="${row + 1},${col + 1}"
@@ -785,19 +797,13 @@ async function startInfection(): Promise<void> {
 
 async function playCompletionBloomRows(): Promise<void> {
   state.isFinalizing = true;
-  state.finishBloomCells = new Set();
   state.resultInfected = new Set(playableCellKeys(state.level));
+  state.finishBloomCells = new Set(playableCellKeys(state.level));
   render();
 
-  for (let row = 0; row < state.level.rows; row += 1) {
-    const rowKeys = playableCellKeysInRow(state.level, row);
-    if (rowKeys.length === 0) continue;
-    state.finishBloomCells = new Set(rowKeys);
-    render();
-    await wait(170);
-  }
-
-  await wait(280);
+  const lastPlayableRow = lastPlayableRowIndex(state.level);
+  const finalDelay = Math.max(0, lastPlayableRow) * COMPLETION_BLOOM_OVERLAP_MS;
+  await wait(finalDelay + COMPLETION_BLOOM_DURATION_MS);
   state.finishBloomCells = new Set();
   state.isFinalizing = false;
 }
@@ -1167,6 +1173,14 @@ function playableCellKeysInRow(level: Level, row: number): string[] {
   }
 
   return keys;
+}
+
+function lastPlayableRowIndex(level: Level): number {
+  for (let row = level.rows - 1; row >= 0; row -= 1) {
+    if (playableCellKeysInRow(level, row).length > 0) return row;
+  }
+
+  return -1;
 }
 
 function tabButton(screen: Screen, labelKey: string): string {

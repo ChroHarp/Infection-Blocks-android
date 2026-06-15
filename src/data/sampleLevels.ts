@@ -1,5 +1,48 @@
 import type { Level, LevelPack } from "../domain/types";
 
+function levelFromPattern(
+  id: string,
+  order: number,
+  titleKey: string,
+  pattern: string[],
+  extraThreeStarSeed = 0
+): Level {
+  const rows = pattern.length;
+  const cols = pattern[0]?.length ?? 0;
+  const holes: Level["holes"] = [];
+
+  pattern.forEach((line, row) => {
+    if (line.length !== cols) {
+      throw new Error(`Invalid level pattern width for ${id}`);
+    }
+
+    [...line].forEach((cell, col) => {
+      if (cell === ".") holes.push([row, col]);
+    });
+  });
+
+  const three = Math.ceil((rows + cols) / 2) + extraThreeStarSeed;
+
+  return {
+    id,
+    packId: "generalized-cross",
+    order,
+    titleKey,
+    rows,
+    cols,
+    maxSeeds: three + 2,
+    free: true,
+    stars: {
+      three,
+      two: three + 1,
+      one: three + 2
+    },
+    holes,
+    requiredSeeds: [],
+    blockedSeeds: []
+  };
+}
+
 export const sampleLevelPacks: LevelPack[] = [
   {
     "id": "world-1",
@@ -448,6 +491,130 @@ export const sampleLevelPacks: LevelPack[] = [
           ]
         ]
       }
+    ]
+  },
+  {
+    "id": "generalized-cross",
+    "order": 3,
+    "titleKey": "Generalized Cross",
+    "access": "free",
+    "status": "published",
+    "levels": [
+      levelFromPattern("cross-01-classic-plus", 13, "Classic Plus", [
+        "...#...",
+        "...#...",
+        "...#...",
+        "#######",
+        "...#...",
+        "...#...",
+        "...#..."
+      ], 1),
+      levelFromPattern("cross-02-thick-plus", 14, "Thick Plus", [
+        "..###..",
+        "..###..",
+        "..###..",
+        "#######",
+        "..###..",
+        "..###..",
+        "..###.."
+      ]),
+      levelFromPattern("cross-03-stepped-gate", 15, "Stepped Gate", [
+        "...##...",
+        "..####..",
+        "..####..",
+        "########",
+        "########",
+        "..####..",
+        "..####..",
+        "...##..."
+      ]),
+      levelFromPattern("cross-04-pinwheel", 16, "Pinwheel Cross", [
+        "....##...",
+        "...###...",
+        "..#####..",
+        "..#####..",
+        "#########",
+        ".#######.",
+        "..#####..",
+        "...###...",
+        "...##...."
+      ]),
+      levelFromPattern("cross-05-lantern", 17, "Lantern Cross", [
+        "....##....",
+        "...####...",
+        "..######..",
+        "..######..",
+        "##########",
+        "##########",
+        "..######..",
+        "...####...",
+        "....##...."
+      ]),
+      levelFromPattern("cross-06-hourglass", 18, "Hourglass Cross", [
+        "....##....",
+        "...####...",
+        "..######..",
+        ".########.",
+        "##########",
+        ".########.",
+        "..######..",
+        "...####...",
+        "...####...",
+        "....##...."
+      ]),
+      levelFromPattern("cross-07-bridge", 19, "Double Bridge", [
+        "....###....",
+        "...#####...",
+        "...#####...",
+        "..#######..",
+        "###########",
+        "###########",
+        "..#######..",
+        "...#####...",
+        "...#####...",
+        "....###...."
+      ]),
+      levelFromPattern("cross-08-shield", 20, "Cross Shield", [
+        ".....#.....",
+        "....###....",
+        "...#####...",
+        "..#######..",
+        ".#########.",
+        "###########",
+        ".#########.",
+        "..#######..",
+        "...#####...",
+        "....###....",
+        ".....#....."
+      ], 1),
+      levelFromPattern("cross-09-bloom-sigil", 21, "Bloom Sigil", [
+        ".....##.....",
+        "....####....",
+        "...######...",
+        "..########..",
+        ".##########.",
+        "############",
+        "############",
+        ".##########.",
+        "..########..",
+        "...######...",
+        "....####....",
+        ".....##....."
+      ], 1),
+      levelFromPattern("cross-10-totem-crest", 22, "Totem Crest", [
+        "......#......",
+        ".....###.....",
+        "....#####....",
+        "...#######...",
+        "..#########..",
+        ".###########.",
+        "#############",
+        ".###########.",
+        "..#########..",
+        "...#######...",
+        "....#####....",
+        ".....###....."
+      ], 1)
     ]
   }
 ];

@@ -84,6 +84,8 @@ For the first paid unlock, prefer Google Play Billing on Android. Keep the unloc
 
 Level unlocks and monetization should be controlled at package level. The local bundled data exports packages first, then can flatten levels for older UI code.
 
+Theory notes for future procedural level generation are recorded in `docs/level-generator-theory.md`.
+
 ```json
 {
   "id": "world-1",
