@@ -56,6 +56,12 @@ export function saveEditorLevels(levels: Level[]): void {
   window.localStorage.setItem(EDITOR_LEVELS_KEY, JSON.stringify(levels));
 }
 
+export function clearEditorLevels(): void {
+  window.localStorage.removeItem(EDITOR_LEVEL_KEY);
+  window.localStorage.removeItem(EDITOR_LEVELS_KEY);
+  window.localStorage.removeItem(EDITOR_INDEX_KEY);
+}
+
 export function loadEditorIndex(max: number): number {
   const raw = Number(window.localStorage.getItem(EDITOR_INDEX_KEY));
   if (Number.isNaN(raw)) return 0;

@@ -10,6 +10,7 @@ import type { CellCoord, CellKind, Level, LevelPack, LevelPackStatus, Locale } f
 import { sampleLevelPacks, sampleLevels } from "./data/sampleLevels";
 import { t } from "./i18n";
 import {
+  clearEditorLevels,
   loadEditorIndex,
   loadEditorLevels,
   loadLocale,
@@ -63,8 +64,12 @@ const themeAssetUrls = [selectedAssetUrl, spreadingAssetUrl, infectedAssetUrl, r
 
 const searchParams = new URLSearchParams(window.location.search);
 const editorBuildEnabled = import.meta.env.VITE_ENABLE_EDITOR !== "false";
-const editorEnabled = editorBuildEnabled && (searchParams.get("editor") === "1" || window.location.pathname.endsWith("/editor.html"));
-const initialLevels = editorEnabled ? loadEditorLevels(sampleLevels) : sampleLevels;
+const editorPathEnabled = ["/editor", "/editor.html", "/student-editor", "/student-editor.html", "/teacher-editor", "/teacher-editor.html"].some((path) =>
+  window.location.pathname.endsWith(path)
+);
+const editorEnabled = editorBuildEnabled && (searchParams.get("editor") === "1" || editorPathEnabled);
+const teacherPublishEnabled = editorEnabled && (searchParams.get("teacher") === "1" || window.location.pathname.endsWith("/teacher-editor"));
+const initialLevels = sampleLevels;
 const initialIndex = editorEnabled ? loadEditorIndex(initialLevels.length) : 0;
 const initialLevel = initialLevels[initialIndex];
 
@@ -431,7 +436,7 @@ function renderEditor(): string {
         <div class="field-grid">
           ${numberInput("rows", "rows", state.level.rows, 1, 16)}
           ${numberInput("cols", "cols", state.level.cols, 1, 16)}
-          ${textInput("id", "levelId", state.level.id)}
+          ${readonlyTextInput("levelId", state.level.id)}
           ${textInput("packId", "packId", state.level.packId)}
           ${numberInput("star3", "star3Limit", state.level.stars.three, 1, 99)}
           ${optionalNumberInput("star2", "star2Limit", state.level.stars.two, 1, 99)}
@@ -454,7 +459,7 @@ function renderEditor(): string {
           <button data-action="copy-json">${t(state.locale, "copyJson")}</button>
           <button data-action="import-json">${t(state.locale, "importJson")}</button>
           <button data-action="save-draft">${t(state.locale, "saveDraft")}</button>
-          <button data-action="publish-pack">${t(state.locale, "publishPack")}</button>
+          ${teacherPublishEnabled ? `<button data-action="load-student-drafts">${t(state.locale, "loadStudentDrafts")}</button><button data-action="publish-pack">${t(state.locale, "publishPack")}</button><button data-action="publish-all-packs">${t(state.locale, "publishAllPacks")}</button>` : ""}
         </div>
       </aside>
 
@@ -573,7 +578,11 @@ function bindEvents(): void {
   root.querySelector<HTMLElement>("[data-action='duplicate-level']")?.addEventListener("click", duplicateLevel);
   root.querySelector<HTMLElement>("[data-action='reorder-levels']")?.addEventListener("click", reorderLevels);
   root.querySelector<HTMLElement>("[data-action='save-draft']")?.addEventListener("click", () => saveCurrentPackToFirestore("draft"));
-  root.querySelector<HTMLElement>("[data-action='publish-pack']")?.addEventListener("click", () => saveCurrentPackToFirestore("published"));
+  if (teacherPublishEnabled) {
+    root.querySelector<HTMLElement>("[data-action='load-student-drafts']")?.addEventListener("click", () => loadFirestoreLevelsForEditor(true));
+    root.querySelector<HTMLElement>("[data-action='publish-pack']")?.addEventListener("click", () => saveCurrentPackToFirestore("published"));
+    root.querySelector<HTMLElement>("[data-action='publish-all-packs']")?.addEventListener("click", publishAllPacksToFirestore);
+  }
 }
 
 function setScreen(screen: Screen): void {
@@ -882,7 +891,6 @@ function updateField(input: HTMLInputElement | HTMLSelectElement): void {
   const field = input.dataset.field;
   if (!field) return;
 
-  if (field === "id") state.level.id = input.value.trim() || "custom-level";
   if (field === "packId") state.level.packId = input.value.trim() || "custom";
   if (field === "rows") state.level.rows = clamp(Number(input.value), 1, 16);
   if (field === "cols") state.level.cols = clamp(Number(input.value), 1, 16);
@@ -1062,12 +1070,32 @@ function reorderLevels(): void {
 }
 
 async function saveCurrentPackToFirestore(status: LevelPackStatus): Promise<void> {
+  if (status === "published" && !teacherPublishEnabled) {
+    state.messageKey = "publishDisabled";
+    render();
+    return;
+  }
+
   saveCurrentLevel();
 
   try {
     const { saveLevelPackToFirestore } = await import("./editorFirestore");
     await saveLevelPackToFirestore(buildCurrentPack(status), status);
     state.messageKey = status === "published" ? "publishSucceeded" : "draftSaved";
+  } catch (error) {
+    state.messageKey = error instanceof Error ? error.message : "firestoreSaveFailed";
+  }
+
+  render();
+}
+
+async function publishAllPacksToFirestore(): Promise<void> {
+  saveCurrentLevel();
+
+  try {
+    const { saveLevelPacksToFirestore } = await import("./editorFirestore");
+    await saveLevelPacksToFirestore(groupedLevels().map((pack) => ({ ...pack, status: "published" as const })));
+    state.messageKey = "publishSucceeded";
   } catch (error) {
     state.messageKey = error instanceof Error ? error.message : "firestoreSaveFailed";
   }
@@ -1218,6 +1246,15 @@ function textInput(field: string, labelKey: string, value: string): string {
   `;
 }
 
+function readonlyTextInput(labelKey: string, value: string): string {
+  return `
+    <label>
+      <span>${t(state.locale, labelKey)}</span>
+      <input type="text" value="${escapeHtml(value)}" readonly />
+    </label>
+  `;
+}
+
 function starText(stars: number, maxStars = 3): string {
   return `${stars} / ${maxStars}`;
 }
@@ -1261,5 +1298,36 @@ window.addEventListener("resize", () => {
   resizeTimer = window.setTimeout(render, 120);
 });
 
+async function loadFirestoreLevelsForEditor(includeStudentDrafts = false): Promise<void> {
+  if (!editorEnabled) return;
+
+  try {
+    const { loadPublishedLevelPacksFromFirestore, loadStudentDraftPacksFromFirestore } = await import("./editorFirestore");
+    const publishedPacks = await loadPublishedLevelPacksFromFirestore();
+    const draftPacks = includeStudentDrafts && teacherPublishEnabled ? await loadStudentDraftPacksFromFirestore() : [];
+    const packsById = new Map(sampleLevelPacks.map((pack) => [pack.id, pack]));
+    for (const pack of [...publishedPacks, ...draftPacks]) packsById.set(pack.id, pack);
+    const levels = Array.from(packsById.values())
+      .sort((a, b) => a.order - b.order)
+      .flatMap((pack) => pack.levels);
+    if (levels.length === 0) return;
+
+    clearEditorLevels();
+    state.levels = levels;
+    state.levelIndex = loadEditorIndex(state.levels.length);
+    state.level = state.levels[state.levelIndex];
+    saveEditorLevels(state.levels);
+    state.selectedPackId = state.level.packId;
+    resetToRequiredSeeds();
+    exportJson();
+    if (includeStudentDrafts) state.messageKey = "studentDraftsLoaded";
+    render();
+  } catch (error) {
+    state.messageKey = error instanceof Error ? error.message : "firestoreSaveFailed";
+    render();
+  }
+}
+
 preloadThemeAssets();
 render();
+void loadFirestoreLevelsForEditor();

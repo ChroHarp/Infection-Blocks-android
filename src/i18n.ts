@@ -135,8 +135,12 @@ const softPetriEn: Messages = {
   copyJson: "Copy JSON",
   saveDraft: "Save Draft",
   publishPack: "Publish Pack",
+  publishAllPacks: "Publish All Packs",
+  loadStudentDrafts: "Load Student Drafts",
   draftSaved: "Draft saved to Firestore.",
   publishSucceeded: "Pack published to Firestore.",
+  publishDisabled: "Publishing is only available in teacher mode.",
+  studentDraftsLoaded: "Student drafts loaded.",
   firestoreSaveFailed: "Firestore save failed. Check network or security rules.",
   editorHelp: "Pick a tool, then tap cells. Blue cells are fixed seed points. Dormant cells cannot be starting points, but must be bloomed.",
   jsonHelp: "This JSON can be used as level data."

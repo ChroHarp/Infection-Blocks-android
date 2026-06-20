@@ -1,3 +1,13 @@
 [build]
-  command = "npm run build:player"
-  publish = "dist-player"
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/student-editor"
+  to = "/student-editor.html"
+  status = 200
+
+[[redirects]]
+  from = "/teacher-editor"
+  to = "/editor.html?teacher=1"
+  status = 200

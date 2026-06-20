@@ -11,7 +11,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         app: resolve(__dirname, "index.html"),
-        editor: resolve(__dirname, "editor.html")
+        editor: resolve(__dirname, "editor.html"),
+        studentEditor: resolve(__dirname, "student-editor.html")
       }
     }
   }
