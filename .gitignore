@@ -4,6 +4,7 @@ dist-player/
 android/
 ios/
 .netlify/
+tmp/
 .env
 .env.*
 !.env.example
