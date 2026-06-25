@@ -1,9 +1,4 @@
 import "./styles.css";
-import blockedAssetUrl from "./assets/theme/blocked.png";
-import infectedAssetUrl from "./assets/theme/infected.png";
-import requiredSeedAssetUrl from "./assets/theme/required-seed.png";
-import selectedAssetUrl from "./assets/theme/selected.png";
-import spreadingAssetUrl from "./assets/theme/spreading.png";
 import { coordKey, uniqueCoords } from "./domain/coords";
 import { maxPassingSeeds, runInfection } from "./domain/engine";
 import type { CellCoord, CellKind, Level, LevelPack, LevelPackStatus, Locale } from "./domain/types";
@@ -60,7 +55,6 @@ if (!appRoot) {
 }
 
 const root = appRoot;
-const themeAssetUrls = [selectedAssetUrl, spreadingAssetUrl, infectedAssetUrl, requiredSeedAssetUrl, blockedAssetUrl];
 
 const searchParams = new URLSearchParams(window.location.search);
 const editorBuildEnabled = import.meta.env.VITE_ENABLE_EDITOR !== "false";
@@ -98,14 +92,6 @@ const state: AppState = {
   progress: loadProgress()
 };
 
-function preloadThemeAssets(): void {
-  for (const assetUrl of themeAssetUrls) {
-    const image = new Image();
-    image.decoding = "async";
-    image.src = assetUrl;
-    void image.decode?.().catch(() => undefined);
-  }
-}
 
 function render(): void {
   root.innerHTML = `
@@ -1328,6 +1314,5 @@ async function loadFirestoreLevelsForEditor(includeStudentDrafts = false): Promi
   }
 }
 
-preloadThemeAssets();
 render();
 void loadFirestoreLevelsForEditor();
