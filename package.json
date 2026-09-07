@@ -11,6 +11,7 @@
     "test": "vitest run",
     "firebase:push-levels": "node --env-file=.env.local --import tsx scripts/pushLevelPacksToFirestore.ts",
     "firebase:pull-levels": "node --env-file=.env.local --import tsx scripts/pullLevelPacksFromFirestore.ts",
+    "firebase:verify-levels": "node --env-file=.env.local --import tsx scripts/verifyLevelPacksFirestore.ts",
     "android:init": "npm run build && cap add android",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android"

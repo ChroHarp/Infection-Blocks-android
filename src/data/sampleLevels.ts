@@ -1,4 +1,5 @@
 import type { Level, LevelPack } from "../domain/types";
+import { presentationLevelPacks } from "./presentationLevelPacks";
 
 function levelFromPattern(
   id: string,
@@ -43,7 +44,7 @@ function levelFromPattern(
   };
 }
 
-export const sampleLevelPacks: LevelPack[] = [
+const legacySampleLevelPacks: LevelPack[] = [
   {
     "id": "world-1",
     "order": 1,
@@ -375,7 +376,7 @@ export const sampleLevelPacks: LevelPack[] = [
     "id": "world-2",
     "order": 2,
     "titleKey": "pack.world2",
-    "access": "paid",
+    "access": "free",
     "status": "published",
     "purchaseId": "unlock_full_game",
     "levels": [
@@ -387,7 +388,7 @@ export const sampleLevelPacks: LevelPack[] = [
         "rows": 10,
         "cols": 7,
         "maxSeeds": 8,
-        "free": false,
+        "free": true,
         "stars": {
           "two": 8,
           "one": null,
@@ -454,7 +455,7 @@ export const sampleLevelPacks: LevelPack[] = [
         "rows": 8,
         "cols": 8,
         "maxSeeds": 4,
-        "free": false,
+        "free": true,
         "stars": {
           "three": 4,
           "two": null,
@@ -496,7 +497,7 @@ export const sampleLevelPacks: LevelPack[] = [
   {
     "id": "generalized-cross",
     "order": 3,
-    "titleKey": "Generalized Cross",
+    "titleKey": "Cross",
     "access": "free",
     "status": "published",
     "levels": [
@@ -618,6 +619,21 @@ export const sampleLevelPacks: LevelPack[] = [
     ]
   }
 ];
+
+const world2MovedLevels = presentationLevelPacks
+  .flatMap((pack) => pack.levels)
+  .filter((level) => /^generalized-cross-2-(09|1[0-6])$/.test(level.id))
+  .map((level) => ({ ...level, packId: "world-2", free: true }));
+
+export const sampleLevelPacks: LevelPack[] = [
+  ...legacySampleLevelPacks.map((pack) => pack.id === "world-2"
+    ? { ...pack, levels: [...pack.levels, ...world2MovedLevels].sort((a, b) => a.order - b.order) }
+    : pack),
+  ...presentationLevelPacks.map((pack) => ({
+    ...pack,
+    levels: pack.levels.filter((level) => !/^generalized-cross-2-(09|1[0-6])$/.test(level.id))
+  }))
+].sort((a, b) => a.order - b.order);
 
 export const sampleLevels: Level[] = sampleLevelPacks
   .flatMap((pack) => pack.levels)
